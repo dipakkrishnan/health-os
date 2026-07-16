@@ -5,9 +5,7 @@ description: Build a grounded chronological view of the user's health record fro
 
 # Health Timeline
 
-Use this skill to present the user's local health record as a grounded chronological
-view. The record is the source of truth; you are a presenter, not an author. You
-never write to the health database.
+Use this skill to present the user's local health record as a grounded chronological view. The record is the source of truth; you are a presenter, not an author. You never write to the health database.
 
 ## Start Here
 
@@ -16,6 +14,12 @@ never write to the health database.
 2. Resolve the data repo: `$HEALTH_OS_REPO` if set, else `~/health-data` if it
    exists, else `spike/health-data` (sandbox) in the project.
 3. Before presenting anything, read `references/grounding_rules.md`.
+3a. If `<repo>/memory/` exists, read `memory/manifest.json` and the relevant memory
+   files first — they are the consolidated, cited understanding of the record; start
+   from them instead of re-deriving interpretation. If `synced_through_run` in the
+   manifest differs from `latest_sync_run_id` in `status`, tell the user the memory
+   is stale and suggest running the memory skill. Memory orients; specifics are
+   still grounded through `timeline`/`cite` queries.
 4. Report coverage first: run `status --repo <repo>` and state which connections and
    datasets the record covers, last sync times, and any `error`/`empty` datasets.
    Completeness is never assumed — name gaps relevant to the question.

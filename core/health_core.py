@@ -7,6 +7,7 @@ import argparse
 import hashlib
 import json
 import os
+import re
 import sqlite3
 import sys
 import urllib.error
@@ -611,8 +612,12 @@ def reparse(repo: Path, connection_id: str) -> int:
 
 def status(repo: Path) -> dict[str, Any]:
     with connect(repo) as db:
+        latest = db.execute(
+            "SELECT sync_run_id FROM sync_runs WHERE completed_at IS NOT NULL ORDER BY rowid DESC LIMIT 1"
+        ).fetchone()
         return {
             "schema_version": db.execute("SELECT value FROM metadata WHERE key='schema_version'").fetchone()[0],
+            "latest_sync_run_id": latest["sync_run_id"] if latest else None,
             "connections": db.execute("SELECT COUNT(*) FROM connections").fetchone()[0],
             "sync_runs": db.execute("SELECT COUNT(*) FROM sync_runs").fetchone()[0],
             "raw_blobs": db.execute("SELECT COUNT(*) FROM raw_blobs").fetchone()[0],
@@ -672,24 +677,54 @@ def timeline(
                COALESCE(effective_start, recorded_at)"""
     with connect(repo) as db:
         rows = db.execute(sql, parameters).fetchall()
-    entries = []
-    for row in rows:
-        entries.append({
-            "id": row["clinical_item_id"],
-            "kind": row["kind"],
-            "display": row["display"],
-            "summary": item_summary(row["kind"], json.loads(row["value_json"])),
-            "status": row["status"],
-            "code": row["code"],
-            "when": {
-                "start": row["effective_start"],
-                "end": row["effective_end"],
-                "recorded": row["recorded_at"],
-                "date_unknown": row["effective_start"] is None and row["recorded_at"] is None,
-            },
-            "connection": row["connection_id"],
-        })
-    return entries
+    return [entry_from_row(row) for row in rows]
+
+
+def entry_from_row(row: sqlite3.Row) -> dict[str, Any]:
+    return {
+        "id": row["clinical_item_id"],
+        "kind": row["kind"],
+        "display": row["display"],
+        "summary": item_summary(row["kind"], json.loads(row["value_json"])),
+        "status": row["status"],
+        "code": row["code"],
+        "when": {
+            "start": row["effective_start"],
+            "end": row["effective_end"],
+            "recorded": row["recorded_at"],
+            "date_unknown": row["effective_start"] is None and row["recorded_at"] is None,
+        },
+        "connection": row["connection_id"],
+    }
+
+
+def delta(repo: Path, after_run: str) -> dict[str, Any]:
+    """Current clinical items first seen in sync runs after the given one —
+    the diff a memory update processes."""
+    with connect(repo) as db:
+        anchor = db.execute(
+            "SELECT rowid FROM sync_runs WHERE sync_run_id=?", (after_run,)
+        ).fetchone()
+        if not anchor:
+            raise SystemExit(f"Unknown sync run: {after_run}")
+        latest = db.execute(
+            "SELECT sync_run_id FROM sync_runs WHERE completed_at IS NOT NULL ORDER BY rowid DESC LIMIT 1"
+        ).fetchone()
+        rows = db.execute(
+            """
+            SELECT ci.* FROM current_clinical_items ci
+            JOIN resources r ON r.resource_version_key = ci.resource_version_key
+            JOIN sync_runs sr ON sr.sync_run_id = r.first_seen_run_id
+            WHERE sr.rowid > ?
+            ORDER BY sr.rowid
+            """,
+            (anchor["rowid"],),
+        ).fetchall()
+    return {
+        "after_run": after_run,
+        "latest_run": latest["sync_run_id"] if latest else None,
+        "new_items": [entry_from_row(row) for row in rows],
+    }
 
 
 def cite(repo: Path, item_id_prefix: str) -> dict[str, Any]:
@@ -748,7 +783,26 @@ def verify(repo: Path) -> dict[str, Any]:
                     {"clinical_item_id": row["clinical_item_id"], "kind": row["kind"],
                      "display": row["display"], "field": field, "pointer": ptr}
                 )
-    return {"items": len(rows), "pointers_resolved": resolved, "dangling": dangling}
+    memory_citations: dict[str, Any] = {"checked": 0, "bad": []}
+    memory_dir = repo / "memory"
+    if memory_dir.is_dir():
+        with connect(repo) as db:
+            ids = [r[0] for r in db.execute("SELECT clinical_item_id FROM current_clinical_items")]
+        for md_file in sorted(memory_dir.glob("*.md")):
+            for prefix in re.findall(r"\[ci:([0-9a-fA-F]{6,64})\]", md_file.read_text()):
+                matches = [i for i in ids if i.startswith(prefix.lower())]
+                if len(matches) == 1:
+                    memory_citations["checked"] += 1
+                else:
+                    memory_citations["bad"].append(
+                        {"file": md_file.name, "citation": prefix, "matches": len(matches)}
+                    )
+    return {
+        "items": len(rows),
+        "pointers_resolved": resolved,
+        "dangling": dangling,
+        "memory_citations": memory_citations,
+    }
 
 
 def main() -> None:
@@ -789,6 +843,10 @@ def main() -> None:
     cite_parser.add_argument("--repo", type=Path, required=True)
     cite_parser.add_argument("item_id", help="Clinical item id (prefix allowed)")
 
+    delta_parser = subparsers.add_parser("delta")
+    delta_parser.add_argument("--repo", type=Path, required=True)
+    delta_parser.add_argument("--after", required=True, help="Sync run id the memory is current through")
+
     args = parser.parse_args()
     if args.command == "init":
         initialize(args.repo, args.connection, args.provider, args.fhir_base, args.patient_id, args.token_endpoint)
@@ -805,8 +863,10 @@ def main() -> None:
     elif args.command == "verify":
         report = verify(args.repo)
         print(json.dumps(report, indent=2))
-        if report["dangling"]:
+        if report["dangling"] or report["memory_citations"]["bad"]:
             sys.exit(1)
+    elif args.command == "delta":
+        print(json.dumps(delta(args.repo, args.after), indent=2))
     elif args.command == "timeline":
         print(json.dumps(timeline(args.repo, args.kind, args.query, args.since, args.until), indent=2))
     elif args.command == "cite":

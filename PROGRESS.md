@@ -46,9 +46,19 @@
     and `resync` (unattended cron path — proven live against sandbox: JWT mint, sync, verify, no login)
   - Epic endpoint directory lookup works (NYU Langone -> epicfhir.nyumc.org FHIR R4 base)
 
+- Memory layer (2026-07-16): persistent, cited agent understanding of the record
+  - `skills/memory/`: bootstrap + incremental update workflow over `memory/` in the data repo
+    (manifest watermark, timeline/medications/conditions/gaps files, consolidation rules)
+  - Core: `delta --after <run>` (items first seen since a sync run, rowid-watermarked),
+    `status.latest_sync_run_id`, `verify` now also resolves `[ci:…]` citations in memory files
+  - Timeline skill reads memory for orientation and flags staleness
+  - GitHub repo public: https://github.com/dipakkrishnan/health-os (marketplace install live)
+  - App marked ready for production on fhir.epic.com (2026-07-16); production propagation underway
+
 ## Next
-1. USER ACTION: mark app ready for production on fhir.epic.com (T&C + docs pages are live); wait out
-   propagation (~1 day), then: `python3 core/connect.py connect --repo <repo> --connection nyu --org "NYU Langone"`
+1. Once Epic propagation completes:
+   `python3 core/connect.py connect --repo ~/health-data --connection nyu --org "NYU Langone"`
+   then bootstrap memory over the real record.
 2. First real value: visit-prep skill over live data (timeline + med list + questions, every claim cited)
 3. Timeline skill scaffolded (2026-07-14) following the deep-review-skill plugin pattern:
    canonical source in `skills/timeline/` (SKILL.md + references/), `.claude/skills/timeline`

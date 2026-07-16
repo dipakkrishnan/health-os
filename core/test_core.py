@@ -187,6 +187,21 @@ class CoreTest(unittest.TestCase):
             self.assertEqual(citation["evidence"]["value"]["value"]["value"], 1.5)
             self.assertEqual(citation["evidence"]["time"]["value"], "2026-07-01T09:00:00Z")
 
+            changes = health_core.delta(repo, first["sync_run_id"])
+            self.assertEqual(changes["latest_run"], third["sync_run_id"])
+            self.assertEqual([e["kind"] for e in changes["new_items"]], ["lab_result"])
+            self.assertEqual(changes["new_items"][0]["summary"], "1.5 mg/dL")
+
+            memory_dir = repo / "memory"
+            memory_dir.mkdir()
+            (memory_dir / "timeline.md").write_text(
+                f"- Creatinine 1.5 mg/dL [ci:{lab['id'][:12]}]\n- bogus [ci:deadbeef0000]\n"
+            )
+            report = health_core.verify(repo)
+            self.assertEqual(report["memory_citations"]["checked"], 1)
+            self.assertEqual(len(report["memory_citations"]["bad"]), 1)
+            self.assertEqual(report["memory_citations"]["bad"][0]["citation"], "deadbeef0000")
+
     def test_dynamic_key_and_assertion(self):
         with tempfile.TemporaryDirectory() as directory:
             key_path = Path(directory) / "epic.pem"

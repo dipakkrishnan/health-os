@@ -11,8 +11,12 @@ every normalized clinical item points to the exact response bytes it came from, 
 Every stated fact carries a citation that resolves back to source bytes.
 
 - `timeline` — grounded chronological views: lab trends, medication history,
-  conditions, encounters. More to come: visit prep, medication reconciliation,
-  cross-specialty deep review.
+  conditions, encounters.
+- `memory` — bootstraps and maintains the persistent, cited memory of the record
+  (`memory/` in the data repo: timeline, medications, conditions, gaps), updated
+  incrementally from sync deltas and citation-checked by `verify`.
+
+More to come: visit prep, medication reconciliation, cross-specialty deep review.
 
 Read the [design thesis](design-thesis.md) for the full picture, and
 [PROGRESS.md](PROGRESS.md) for current status.
