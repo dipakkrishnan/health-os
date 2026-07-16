@@ -15,7 +15,8 @@ Every stated fact carries a citation that resolves back to source bytes.
   medications, conditions, gaps), updated incrementally from sync deltas and
   citation-checked by `verify`.
 - `chart` — consults that understanding to answer questions: lab trends, medication
-  history, conditions, encounters, grounded chronological views — every fact cited.
+  history, appointments, notes, open orders, conditions, encounters, and grounded
+  chronological views — every fact cited.
 
 More to come: visit prep, medication reconciliation, cross-specialty deep review.
 
@@ -35,6 +36,12 @@ Read the [design thesis](design-thesis.md) for the full picture, and
 Or clone this repository and run Claude Code inside it — the skills load from
 `.claude/skills/`.
 
+### Codex
+
+Install **Health OS** from Plugins in the Codex app, or clone this repository and
+open it as a local project while developing. The same skills are shared by both
+runtimes; only their native scheduling instructions differ.
+
 ## Setup
 
 Connect a health system (one-time, interactive — opens your patient portal login):
@@ -44,7 +51,10 @@ pip install -r core/requirements.txt
 python3 core/connect.py connect --repo ~/health-data --connection nyu --org "NYU Langone"
 ```
 
-Keep it fresh (unattended; suitable for cron/launchd):
+Repeat `connect` with another `--connection` name to add another health system.
+
+Keep one connection fresh (unattended and suitable for a runtime-native local
+scheduled task):
 
 ```bash
 python3 core/connect.py resync --repo ~/health-data --connection nyu

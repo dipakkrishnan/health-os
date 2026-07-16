@@ -155,6 +155,7 @@ def connect(args: argparse.Namespace) -> None:
     health_core.initialize(
         args.repo, args.connection, args.provider or args.org or fhir_base,
         fhir_base, patient_id, endpoints["token"],
+        str(token.get("scope") or "").split(), token.get("fhirUser"),
     )
 
     access_token = token["access_token"]

@@ -1,7 +1,7 @@
 {
   "name": "health-os",
-  "version": "0.1.0",
-  "description": "Local-first personal health record with grounded, citation-checked agent skills",
+  "version": "0.2.0",
+  "description": "Local-first health context with grounded, citation-checked agent workflows",
   "author": {
     "name": "Dipak Krishnan",
     "url": "https://github.com/dipakkrishnan"
@@ -14,6 +14,6 @@
     "personal-health-record",
     "fhir",
     "local-first",
-    "timeline"
+    "care-coordination"
   ]
 }

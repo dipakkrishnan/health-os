@@ -43,13 +43,21 @@ clinical record is complete or correct.
 
 ## Clinical semantics
 
-The first parser intentionally supports only:
+The parser supports the first-refresh evidence surface:
 
+- `Patient` -> `patient_profile`;
 - laboratory `Observation` -> `lab_result`;
+- vital-sign `Observation` -> `vital_sign`;
 - `MedicationRequest` -> `medication_order`;
+- `MedicationDispense` -> `medication_dispense`;
 - `Condition` -> `condition_assertion`;
 - `AllergyIntolerance` -> `allergy_assertion`;
-- `Encounter` -> `encounter`.
+- `Encounter` -> `encounter`;
+- `Appointment` -> `appointment`;
+- `DocumentReference` -> `clinical_document`, with same-origin `Binary` content preserved;
+- `ServiceRequest` -> `service_request`;
+- `DiagnosticReport` -> `diagnostic_report`;
+- `Procedure` -> `procedure`.
 
 A medication order is never promoted to confirmed medication use. A condition or
 allergy is an assertion with its original verification/status fields preserved.

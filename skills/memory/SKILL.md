@@ -12,29 +12,36 @@ regenerable from it. You never write to the database itself.
 
 ## Start Here
 
-1. Resolve the core CLI: `${CLAUDE_PLUGIN_ROOT}/core/health_core.py` when running as
-   an installed plugin, else `core/health_core.py` from the project root.
+1. Resolve the plugin root without assuming a runtime: use `$PLUGIN_ROOT` when
+   available (Codex), then `$CLAUDE_PLUGIN_ROOT` (Claude), otherwise locate the
+   nearest parent of this skill or the working directory containing
+   `.codex-plugin/plugin.json` or `.claude-plugin/plugin.json`. Confirm
+   `<plugin-root>/core/health_core.py` exists; never guess a path.
 2. Resolve the data repo: `$HEALTH_OS_REPO` if set, else `~/health-data` if it
-   exists, else `spike/health-data` (sandbox) in the project.
-3. Read `references/memory_format.md` for the file layout and manifest schema, and
+   exists. If neither exists, stop and help the user connect a health system.
+   Never silently use bundled or sandbox data.
+3. Before the first record access in a task, explain that selected local record
+   context will be processed by the active agent runtime and follow its configured
+   data policy. Do not read the record if the user declines.
+4. Read `references/memory_format.md` for the file layout and manifest schema, and
    the chart skill's `references/grounding_rules.md` — memory files obey the same
    rules: every factual line cites `[ci:<12-char id>]`, orders are not use, unknown
    dates stay unknown, placeholders like "Not on File" are absences.
-4. Read `memory/manifest.json` if it exists, then choose the path:
+5. Read `memory/manifest.json` if it exists, then choose the path:
    - **No manifest → bootstrap.** Query the record per domain (`timeline --kind ...`),
      consolidate, and write the memory files. Duplicate assertions (e.g. the same
      diagnosis recorded per encounter) become ONE line with multiple citations.
    - **Manifest present → incremental update.** Run
      `delta --repo <repo> --after <synced_through_run>`. If `new_items` is empty,
      report that memory is current and stop. Otherwise process only the delta.
-5. For each delta item, ask what existing memory it touches — a new item may extend
+6. For each delta item, ask what existing memory it touches — a new item may extend
    the timeline, but it may also contradict a line (a condition resolved, a corrected
    result, a med discontinued). Edit the affected line rather than appending a
    duplicate; move superseded statements to the file's `## History` section with a
    note of what replaced them.
-6. Write `manifest.json` with `synced_through_run` = the `latest_run` from the delta
+7. Write `manifest.json` with `synced_through_run` = the `latest_run` from the delta
    (or `latest_sync_run_id` from `status` when bootstrapping) and `updated_at`.
-7. Always finish with `verify --repo <repo>` — it resolves every `[ci:…]` citation in
+8. Always finish with `verify --repo <repo>` — it resolves every `[ci:…]` citation in
    the memory files against current clinical items and fails on danglers. A failing
    verify means fix the memory before reporting success.
 
