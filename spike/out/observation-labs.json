@@ -1,0 +1,136 @@
+[
+  {
+    "link": [
+      {
+        "relation": "self",
+        "url": "https://fhir.epic.com/interconnect-fhir-oauth/api/FHIR/R4/Observation/eyPMWgv2u2RUfsV4p1lLKuUtqyPs2-QNi2zKvbTsFYtRByc6B.cSi1iVU5V2HOpX23"
+      }
+    ],
+    "fullUrl": "https://fhir.epic.com/interconnect-fhir-oauth/api/FHIR/R4/Observation/eyPMWgv2u2RUfsV4p1lLKuUtqyPs2-QNi2zKvbTsFYtRByc6B.cSi1iVU5V2HOpX23",
+    "resource": {
+      "resourceType": "Observation",
+      "id": "eyPMWgv2u2RUfsV4p1lLKuUtqyPs2-QNi2zKvbTsFYtRByc6B.cSi1iVU5V2HOpX23",
+      "extension": [
+        {
+          "valueBoolean": false,
+          "url": "http://nictiz.nl/fhir/StructureDefinition/ext-CopyIndicator"
+        }
+      ],
+      "basedOn": [
+        {
+          "reference": "ServiceRequest/egf4KkhXmgeVWImXEEYH.CEE1ZgJG5SQy2vBX1HgvBCs3",
+          "display": "HEMOGLOBIN A1C"
+        }
+      ],
+      "status": "final",
+      "category": [
+        {
+          "coding": [
+            {
+              "system": "http://terminology.hl7.org/CodeSystem/observation-category",
+              "code": "laboratory",
+              "display": "Laboratory"
+            }
+          ],
+          "text": "Laboratory"
+        },
+        {
+          "coding": [
+            {
+              "system": "urn:oid:1.2.840.114350.1.13.0.1.7.10.798268.30",
+              "code": "Lab",
+              "display": "Lab"
+            }
+          ],
+          "text": "Lab"
+        }
+      ],
+      "code": {
+        "coding": [
+          {
+            "system": "http://loinc.org",
+            "code": "4548-4",
+            "display": "Hemoglobin A1c/Hemoglobin.total in Blood"
+          },
+          {
+            "system": "urn:oid:1.2.840.114350.1.13.0.1.7.2.768282",
+            "code": "1558024",
+            "display": "Hemoglobin A1C"
+          }
+        ],
+        "text": "Hemoglobin A1C"
+      },
+      "subject": {
+        "reference": "Patient/erXuFYUfucBZaryVksYEcMg3",
+        "display": "Lopez, Camila Maria"
+      },
+      "effectiveDateTime": "2019-05-28T14:22:00Z",
+      "issued": "2019-05-28T14:22:41Z",
+      "valueQuantity": {
+        "value": 5.1
+      },
+      "specimen": {
+        "reference": "Specimen/e.n21kE9PMQ94vOo1lkT2XkN1av86guPxYsFU20qTQ1M3",
+        "display": "Specimen"
+      }
+    },
+    "search": {
+      "mode": "match"
+    }
+  },
+  {
+    "fullUrl": "urn:uuid:ae53e599-e2ae-41eb-bae4-5a581306c3ff",
+    "resource": {
+      "resourceType": "OperationOutcome",
+      "issue": [
+        {
+          "severity": "warning",
+          "code": "suppressed",
+          "details": {
+            "coding": [
+              {
+                "system": "urn:oid:1.2.840.114350.1.13.0.1.7.2.657369",
+                "code": "59205",
+                "display": "The authenticated user's search request applies to a sub-resource that the user is not authorized to view. Results of this sub-type will not be returned."
+              }
+            ],
+            "text": "The authenticated user's search request applies to a sub-resource that the user is not authorized to view. Results of this sub-type will not be returned."
+          },
+          "diagnostics": "User not authorized for Observation - SmartData Elements. Search results of this type have not been included."
+        },
+        {
+          "severity": "warning",
+          "code": "suppressed",
+          "details": {
+            "coding": [
+              {
+                "system": "urn:oid:1.2.840.114350.1.13.0.1.7.2.657369",
+                "code": "59204",
+                "display": "The authenticated client's search request applies to a sub-resource that the client is not authorized for. Results of this sub-type will not be returned."
+              }
+            ],
+            "text": "The authenticated client's search request applies to a sub-resource that the client is not authorized for. Results of this sub-type will not be returned."
+          },
+          "diagnostics": "Client not authorized for Observation - Outside Record Results. Search results of this type have not been included."
+        },
+        {
+          "severity": "warning",
+          "code": "processing",
+          "details": {
+            "coding": [
+              {
+                "system": "urn:oid:1.2.840.114350.1.13.0.1.7.2.657369",
+                "code": "4119",
+                "display": "This response includes information available to the authorized user at the time of the request. It may not contain the entire record available in the system."
+              }
+            ],
+            "text": "This response includes information available to the authorized user at the time of the request. It may not contain the entire record available in the system."
+          }
+        }
+      ]
+    },
+    "search": {
+      "mode": "outcome"
+    }
+  }
+]

@@ -1,0 +1,19 @@
+{
+  "name": "health-os",
+  "version": "0.1.0",
+  "description": "Local-first personal health record with grounded, citation-checked agent skills",
+  "author": {
+    "name": "Dipak Krishnan",
+    "url": "https://github.com/dipakkrishnan"
+  },
+  "homepage": "https://dipakkrishnan.github.io/health-os/",
+  "repository": "https://github.com/dipakkrishnan/health-os",
+  "license": "Apache-2.0",
+  "keywords": [
+    "health",
+    "personal-health-record",
+    "fhir",
+    "local-first",
+    "timeline"
+  ]
+}

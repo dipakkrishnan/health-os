@@ -1,0 +1,23 @@
+{
+  "name": "health-os-marketplace",
+  "description": "Direct distribution channel for the Health OS Claude Code plugin.",
+  "owner": {
+    "name": "Dipak Krishnan",
+    "url": "https://github.com/dipakkrishnan"
+  },
+  "plugins": [
+    {
+      "name": "health-os",
+      "source": "./",
+      "description": "Local-first personal health record with grounded, citation-checked agent skills.",
+      "version": "0.1.0",
+      "author": {
+        "name": "Dipak Krishnan",
+        "url": "https://github.com/dipakkrishnan"
+      },
+      "homepage": "https://dipakkrishnan.github.io/health-os/",
+      "repository": "https://github.com/dipakkrishnan/health-os",
+      "license": "Apache-2.0"
+    }
+  ]
+}

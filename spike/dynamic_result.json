@@ -1,0 +1,161 @@
+{
+  "registration_endpoint": "https://fhir.epic.com/interconnect-fhir-oauth/oauth2/register",
+  "dynamic_client_id": "G66488CE9-7F14-11F1-95F1-005056BECC4A",
+  "patient_id": "erXuFYUfucBZaryVksYEcMg3",
+  "first_sync": {
+    "sync_run_id": "f266c3b2-aad8-4787-92b8-49dcb0c885c1",
+    "datasets": {
+      "patient": {
+        "status": "success",
+        "resources": 1,
+        "new_clinical_items": 0,
+        "pages": 1
+      },
+      "observation-labs": {
+        "status": "success",
+        "resources": 1,
+        "new_clinical_items": 1,
+        "pages": 1
+      },
+      "medication-requests": {
+        "status": "success",
+        "resources": 1,
+        "new_clinical_items": 1,
+        "pages": 1
+      },
+      "conditions": {
+        "status": "success",
+        "resources": 7,
+        "new_clinical_items": 7,
+        "pages": 1
+      },
+      "allergies": {
+        "status": "success",
+        "resources": 1,
+        "new_clinical_items": 1,
+        "pages": 1
+      },
+      "encounters": {
+        "status": "success",
+        "resources": 5,
+        "new_clinical_items": 5,
+        "pages": 1
+      }
+    },
+    "status": "complete",
+    "errors": []
+  },
+  "second_sync": {
+    "sync_run_id": "a9e284c2-5a54-4b9a-bc6c-b7264f888717",
+    "datasets": {
+      "patient": {
+        "status": "success",
+        "resources": 1,
+        "new_clinical_items": 0,
+        "pages": 1
+      },
+      "observation-labs": {
+        "status": "success",
+        "resources": 1,
+        "new_clinical_items": 0,
+        "pages": 1
+      },
+      "medication-requests": {
+        "status": "success",
+        "resources": 1,
+        "new_clinical_items": 0,
+        "pages": 1
+      },
+      "conditions": {
+        "status": "success",
+        "resources": 7,
+        "new_clinical_items": 0,
+        "pages": 1
+      },
+      "allergies": {
+        "status": "success",
+        "resources": 1,
+        "new_clinical_items": 0,
+        "pages": 1
+      },
+      "encounters": {
+        "status": "success",
+        "resources": 5,
+        "new_clinical_items": 0,
+        "pages": 1
+      }
+    },
+    "status": "complete",
+    "errors": []
+  },
+  "core_status": {
+    "schema_version": "1",
+    "connections": 1,
+    "sync_runs": 2,
+    "raw_blobs": 11,
+    "resource_versions": 21,
+    "clinical_items": 15,
+    "coverage": [
+      {
+        "connection_id": "epic-sandbox",
+        "dataset": "allergies",
+        "resource_type": "AllergyIntolerance",
+        "status": "success",
+        "item_count": 1,
+        "last_attempt_at": "2026-07-13T23:41:51+00:00",
+        "last_success_at": "2026-07-13T23:41:51+00:00",
+        "error": null
+      },
+      {
+        "connection_id": "epic-sandbox",
+        "dataset": "conditions",
+        "resource_type": "Condition",
+        "status": "success",
+        "item_count": 7,
+        "last_attempt_at": "2026-07-13T23:41:50+00:00",
+        "last_success_at": "2026-07-13T23:41:50+00:00",
+        "error": null
+      },
+      {
+        "connection_id": "epic-sandbox",
+        "dataset": "encounters",
+        "resource_type": "Encounter",
+        "status": "success",
+        "item_count": 5,
+        "last_attempt_at": "2026-07-13T23:41:52+00:00",
+        "last_success_at": "2026-07-13T23:41:52+00:00",
+        "error": null
+      },
+      {
+        "connection_id": "epic-sandbox",
+        "dataset": "medication-requests",
+        "resource_type": "MedicationRequest",
+        "status": "success",
+        "item_count": 1,
+        "last_attempt_at": "2026-07-13T23:41:49+00:00",
+        "last_success_at": "2026-07-13T23:41:49+00:00",
+        "error": null
+      },
+      {
+        "connection_id": "epic-sandbox",
+        "dataset": "observation-labs",
+        "resource_type": "Observation",
+        "status": "success",
+        "item_count": 1,
+        "last_attempt_at": "2026-07-13T23:41:49+00:00",
+        "last_success_at": "2026-07-13T23:41:49+00:00",
+        "error": null
+      },
+      {
+        "connection_id": "epic-sandbox",
+        "dataset": "patient",
+        "resource_type": "Patient",
+        "status": "success",
+        "item_count": 1,
+        "last_attempt_at": "2026-07-13T23:41:48+00:00",
+        "last_success_at": "2026-07-13T23:41:48+00:00",
+        "error": null
+      }
+    ]
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "name": "health-os",
+  "version": "0.1.0",
+  "description": "Local-first personal health record with grounded, citation-checked agent skills",
+  "author": {
+    "name": "Dipak Krishnan",
+    "url": "https://github.com/dipakkrishnan"
+  },
+  "homepage": "https://dipakkrishnan.github.io/health-os/",
+  "repository": "https://github.com/dipakkrishnan/health-os",
+  "license": "Apache-2.0",
+  "keywords": [
+    "health",
+    "personal-health-record",
+    "fhir",
+    "local-first",
+    "timeline"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Health OS",
+    "shortDescription": "Grounded timeline and review skills over your own health records",
+    "longDescription": "Health OS is a local-first personal health record for coding agents. Its core syncs your records from your health systems' patient-access FHIR APIs to a versioned local store with full provenance, and its skills present that record — timelines today, visit prep and cross-specialty review next — with a citation on every stated fact.",
+    "developerName": "Dipak Krishnan",
+    "category": "Productivity",
+    "capabilities": [
+      "Read",
+      "Write"
+    ],
+    "websiteURL": "https://dipakkrishnan.github.io/health-os/",
+    "privacyPolicyURL": "https://github.com/dipakkrishnan/health-os/blob/main/PRIVACY.md",
+    "defaultPrompt": [
+      "Show me my health timeline.",
+      "What labs are on my record since January?",
+      "Show my medication history with citations."
+    ],
+    "brandColor": "#2F6F5E"
+  }
+}

@@ -1,0 +1,11 @@
+.venv/
+__pycache__/
+*.pyc
+.DS_Store
+dist/
+
+# local health data and credentials — never committed
+spike/health-data/
+spike/state/
+spike/out/token_response.json
+health-data/

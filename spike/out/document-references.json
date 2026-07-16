@@ -1,0 +1,490 @@
+[
+  {
+    "link": [
+      {
+        "relation": "self",
+        "url": "https://fhir.epic.com/interconnect-fhir-oauth/api/FHIR/R4/DocumentReference/eNreR3hAkvySSHIcq2Lrxlw3"
+      }
+    ],
+    "fullUrl": "https://fhir.epic.com/interconnect-fhir-oauth/api/FHIR/R4/DocumentReference/eNreR3hAkvySSHIcq2Lrxlw3",
+    "resource": {
+      "resourceType": "DocumentReference",
+      "id": "eNreR3hAkvySSHIcq2Lrxlw3",
+      "extension": [
+        {
+          "extension": [
+            {
+              "valueCodeableConcept": {
+                "coding": [
+                  {
+                    "system": "urn:oid:1.2.840.114350.1.72.1.7.7.10.696784.72072",
+                    "code": "1",
+                    "display": "Signer"
+                  }
+                ],
+                "text": "Signer"
+              },
+              "url": "mode"
+            },
+            {
+              "valueDateTime": "2023-05-21T16:57:01Z",
+              "url": "time"
+            },
+            {
+              "valueReference": {
+                "reference": "Practitioner/eUXiD4IyBLJFoR2VHOjfTdg3",
+                "display": "Physician"
+              },
+              "url": "party"
+            }
+          ],
+          "url": "http://hl7.org/fhir/5.0/StructureDefinition/extension-DocumentReference.attester"
+        }
+      ],
+      "identifier": [
+        {
+          "system": "urn:oid:1.2.840.114350.1.13.0.1.7.2.727879",
+          "value": "196763"
+        }
+      ],
+      "status": "current",
+      "docStatus": "final",
+      "type": {
+        "coding": [
+          {
+            "system": "urn:oid:1.2.840.114350.1.13.0.1.7.4.737880.5010",
+            "code": "1",
+            "display": "Progress Notes"
+          },
+          {
+            "system": "urn:oid:1.2.840.114350.1.72.727879.69848980",
+            "code": "1",
+            "display": "Progress Notes"
+          },
+          {
+            "system": "http://loinc.org",
+            "code": "11506-3",
+            "display": "Provider-unspecified Progress note",
+            "userSelected": true
+          }
+        ],
+        "text": "Progress Notes"
+      },
+      "category": [
+        {
+          "coding": [
+            {
+              "system": "http://hl7.org/fhir/us/core/CodeSystem/us-core-documentreference-category",
+              "code": "clinical-note",
+              "display": "Clinical Note"
+            }
+          ],
+          "text": "Clinical Note"
+        }
+      ],
+      "subject": {
+        "reference": "Patient/erXuFYUfucBZaryVksYEcMg3",
+        "display": "Lopez, Camila Maria"
+      },
+      "date": "2023-05-21T16:55:00Z",
+      "author": [
+        {
+          "reference": "Practitioner/eUXiD4IyBLJFoR2VHOjfTdg3",
+          "type": "Practitioner",
+          "display": "Physician"
+        }
+      ],
+      "authenticator": {
+        "extension": [
+          {
+            "valueDateTime": "2023-05-21T16:57:01Z",
+            "url": "http://open.epic.com/FHIR/StructureDefinition/extension/clinical-note-authentication-instant"
+          }
+        ],
+        "reference": "Practitioner/eUXiD4IyBLJFoR2VHOjfTdg3",
+        "type": "Practitioner",
+        "display": "Physician"
+      },
+      "custodian": {
+        "identifier": {
+          "system": "urn:ietf:rfc:3986",
+          "value": "urn:oid:fhir"
+        },
+        "display": "Epic USCDI on FHIR"
+      },
+      "content": [
+        {
+          "attachment": {
+            "contentType": "text/html",
+            "url": "Binary/eXGCC0U1rMIkqT43GlAEfsA3"
+          },
+          "format": {
+            "system": "http://ihe.net/fhir/ValueSet/IHE.FormatCode.codesystem",
+            "code": "urn:ihe:iti:xds:2017:mimeTypeSufficient",
+            "display": "mimeType Sufficient"
+          }
+        },
+        {
+          "attachment": {
+            "contentType": "text/rtf",
+            "url": "Binary/ftlnC8mfyjUVrXEpeEsj12f1.H.Tu5gtgXv1gF4e3F4Y4"
+          },
+          "format": {
+            "system": "http://ihe.net/fhir/ValueSet/IHE.FormatCode.codesystem",
+            "code": "urn:ihe:iti:xds:2017:mimeTypeSufficient",
+            "display": "mimeType Sufficient"
+          }
+        }
+      ],
+      "context": {
+        "extension": [
+          {
+            "valueCodeableConcept": {
+              "coding": [
+                {
+                  "system": "urn:oid:1.2.840.114350.1.13.0.1.7.4.836982.1040",
+                  "code": "1",
+                  "display": "Physician"
+                },
+                {
+                  "system": "urn:oid:2.16.840.1.113883.11.19465",
+                  "code": "207Q00000X",
+                  "display": "Family Medicine Physician"
+                }
+              ],
+              "text": "Physician"
+            },
+            "url": "http://open.epic.com/FHIR/StructureDefinition/extension/clinical-note-author-provider-type"
+          }
+        ],
+        "encounter": [
+          {
+            "reference": "Encounter/exfbAtPCSLnf8s.193aMUnQ3",
+            "identifier": {
+              "use": "usual",
+              "system": "urn:oid:1.2.840.114350.1.13.0.1.7.3.698084.8",
+              "value": "29539"
+            },
+            "display": "Office Visit"
+          }
+        ],
+        "period": {
+          "start": "2023-05-21T16:53:00Z"
+        }
+      }
+    },
+    "search": {
+      "mode": "match"
+    }
+  },
+  {
+    "link": [
+      {
+        "relation": "self",
+        "url": "https://fhir.epic.com/interconnect-fhir-oauth/api/FHIR/R4/DocumentReference/ewtIzA62-DkL21MnJY6OyRj8UF8vh7UuasqvGB1pc5CY3"
+      }
+    ],
+    "fullUrl": "https://fhir.epic.com/interconnect-fhir-oauth/api/FHIR/R4/DocumentReference/ewtIzA62-DkL21MnJY6OyRj8UF8vh7UuasqvGB1pc5CY3",
+    "resource": {
+      "resourceType": "DocumentReference",
+      "id": "ewtIzA62-DkL21MnJY6OyRj8UF8vh7UuasqvGB1pc5CY3",
+      "identifier": [
+        {
+          "use": "usual",
+          "system": "urn:oid:1.2.840.114350.1.13.0.1.7.2.798268",
+          "value": "1066912"
+        }
+      ],
+      "status": "current",
+      "type": {
+        "coding": [
+          {
+            "system": "http://loinc.org",
+            "code": "18748-4",
+            "display": "Diagnostic imaging study"
+          }
+        ],
+        "text": "Diagnostic imaging study"
+      },
+      "category": [
+        {
+          "coding": [
+            {
+              "system": "http://hl7.org/fhir/us/core/CodeSystem/us-core-documentreference-category",
+              "code": "clinical-note",
+              "display": "Clinical Note"
+            }
+          ],
+          "text": "Clinical Note"
+        }
+      ],
+      "subject": {
+        "reference": "Patient/erXuFYUfucBZaryVksYEcMg3",
+        "display": "Lopez, Camila Maria"
+      },
+      "date": "2023-06-02T20:43:46Z",
+      "author": [
+        {
+          "reference": "Practitioner/eM5CWtq15N0WJeuCet5bJlQ3",
+          "type": "Practitioner",
+          "display": "Physician"
+        }
+      ],
+      "custodian": {
+        "display": "FHIR Sandbox"
+      },
+      "content": [
+        {
+          "attachment": {
+            "contentType": "text/html",
+            "url": "Binary/eatrFYJ-c5OxFaXGGKhRmtxnlc-Z0vWhRnWj621bo99g3"
+          },
+          "format": {
+            "system": "http://ihe.net/fhir/ValueSet/IHE.FormatCode.codesystem",
+            "code": "urn:ihe:iti:xds:2017:mimeTypeSufficient",
+            "display": "mimeType Sufficient"
+          }
+        }
+      ],
+      "context": {
+        "encounter": [
+          {
+            "reference": "Encounter/eoIRZgvu9RhrwOzDlZkRbSg3",
+            "identifier": {
+              "use": "usual",
+              "system": "urn:oid:1.2.840.114350.1.13.0.1.7.3.698084.8",
+              "value": "29541"
+            },
+            "display": "Hospital Outpatient Visit"
+          }
+        ],
+        "period": {
+          "start": "2023-06-02T20:43:46Z"
+        }
+      }
+    },
+    "search": {
+      "mode": "match"
+    }
+  },
+  {
+    "link": [
+      {
+        "relation": "self",
+        "url": "https://fhir.epic.com/interconnect-fhir-oauth/api/FHIR/R4/DocumentReference/ewtIzA62-DkL21MnJY6OyRhIhI5asLLt7L5RQtNUW6qY3"
+      }
+    ],
+    "fullUrl": "https://fhir.epic.com/interconnect-fhir-oauth/api/FHIR/R4/DocumentReference/ewtIzA62-DkL21MnJY6OyRhIhI5asLLt7L5RQtNUW6qY3",
+    "resource": {
+      "resourceType": "DocumentReference",
+      "id": "ewtIzA62-DkL21MnJY6OyRhIhI5asLLt7L5RQtNUW6qY3",
+      "identifier": [
+        {
+          "use": "usual",
+          "system": "urn:oid:1.2.840.114350.1.13.0.1.7.2.798268",
+          "value": "1066912"
+        }
+      ],
+      "status": "current",
+      "type": {
+        "coding": [
+          {
+            "system": "http://loinc.org",
+            "code": "18748-4",
+            "display": "Diagnostic imaging study"
+          }
+        ],
+        "text": "Diagnostic imaging study"
+      },
+      "category": [
+        {
+          "coding": [
+            {
+              "system": "http://hl7.org/fhir/us/core/CodeSystem/us-core-documentreference-category",
+              "code": "clinical-note",
+              "display": "Clinical Note"
+            }
+          ],
+          "text": "Clinical Note"
+        }
+      ],
+      "subject": {
+        "reference": "Patient/erXuFYUfucBZaryVksYEcMg3",
+        "display": "Lopez, Camila Maria"
+      },
+      "date": "2023-06-02T20:43:46Z",
+      "author": [
+        {
+          "reference": "Practitioner/eM5CWtq15N0WJeuCet5bJlQ3",
+          "type": "Practitioner",
+          "display": "Physician"
+        }
+      ],
+      "custodian": {
+        "display": "FHIR Sandbox"
+      },
+      "content": [
+        {
+          "attachment": {
+            "contentType": "text/html",
+            "url": "Binary/eatrFYJ-c5OxFaXGGKhRmt-kbn-1xHl8SNrcCB4fHVps3"
+          },
+          "format": {
+            "system": "http://ihe.net/fhir/ValueSet/IHE.FormatCode.codesystem",
+            "code": "urn:ihe:iti:xds:2017:mimeTypeSufficient",
+            "display": "mimeType Sufficient"
+          }
+        }
+      ],
+      "context": {
+        "encounter": [
+          {
+            "reference": "Encounter/eoIRZgvu9RhrwOzDlZkRbSg3",
+            "identifier": {
+              "use": "usual",
+              "system": "urn:oid:1.2.840.114350.1.13.0.1.7.3.698084.8",
+              "value": "29541"
+            },
+            "display": "Hospital Outpatient Visit"
+          }
+        ],
+        "period": {
+          "start": "2023-06-02T20:43:46Z"
+        }
+      }
+    },
+    "search": {
+      "mode": "match"
+    }
+  },
+  {
+    "link": [
+      {
+        "relation": "self",
+        "url": "https://fhir.epic.com/interconnect-fhir-oauth/api/FHIR/R4/DocumentReference/euYCTLWovmnCqF5RhHJi3Z25sdrk5joaPj1R8zBg5PYM3"
+      }
+    ],
+    "fullUrl": "https://fhir.epic.com/interconnect-fhir-oauth/api/FHIR/R4/DocumentReference/euYCTLWovmnCqF5RhHJi3Z25sdrk5joaPj1R8zBg5PYM3",
+    "resource": {
+      "resourceType": "DocumentReference",
+      "id": "euYCTLWovmnCqF5RhHJi3Z25sdrk5joaPj1R8zBg5PYM3",
+      "identifier": [
+        {
+          "use": "usual",
+          "system": "urn:oid:1.2.840.114350.1.13.0.1.7.2.798268",
+          "value": "1066915"
+        }
+      ],
+      "status": "current",
+      "type": {
+        "coding": [
+          {
+            "system": "http://loinc.org",
+            "code": "18748-4",
+            "display": "Diagnostic imaging study"
+          }
+        ],
+        "text": "Diagnostic imaging study"
+      },
+      "category": [
+        {
+          "coding": [
+            {
+              "system": "http://hl7.org/fhir/us/core/CodeSystem/us-core-documentreference-category",
+              "code": "clinical-note",
+              "display": "Clinical Note"
+            }
+          ],
+          "text": "Clinical Note"
+        }
+      ],
+      "subject": {
+        "reference": "Patient/erXuFYUfucBZaryVksYEcMg3",
+        "display": "Lopez, Camila Maria"
+      },
+      "date": "2023-06-02T20:50:25Z",
+      "author": [
+        {
+          "reference": "Practitioner/eM5CWtq15N0WJeuCet5bJlQ3",
+          "type": "Practitioner",
+          "display": "Physician"
+        }
+      ],
+      "custodian": {
+        "display": "FHIR Sandbox"
+      },
+      "content": [
+        {
+          "attachment": {
+            "contentType": "text/html",
+            "url": "Binary/ey9R3HQvzT5D6lNvbJeLdyTF10pM-Yzpp1nsL-VLVkJc3"
+          },
+          "format": {
+            "system": "http://ihe.net/fhir/ValueSet/IHE.FormatCode.codesystem",
+            "code": "urn:ihe:iti:xds:2017:mimeTypeSufficient",
+            "display": "mimeType Sufficient"
+          }
+        }
+      ],
+      "context": {
+        "encounter": [
+          {
+            "reference": "Encounter/ej567ARSFdaF4ooZVunIlIg3",
+            "identifier": {
+              "use": "usual",
+              "system": "urn:oid:1.2.840.114350.1.13.0.1.7.3.698084.8",
+              "value": "29542"
+            },
+            "display": "Hospital Outpatient Visit"
+          }
+        ],
+        "period": {
+          "start": "2023-06-02T20:50:25Z"
+        }
+      }
+    },
+    "search": {
+      "mode": "match"
+    }
+  },
+  {
+    "fullUrl": "urn:uuid:dfec1538-3af9-4eba-a73d-7ff88c4565dc",
+    "resource": {
+      "resourceType": "OperationOutcome",
+      "issue": [
+        {
+          "severity": "warning",
+          "code": "suppressed",
+          "details": {
+            "coding": [
+              {
+                "system": "urn:oid:1.2.840.114350.1.13.0.1.7.2.657369",
+                "code": "59204",
+                "display": "The authenticated client's search request applies to a sub-resource that the client is not authorized for. Results of this sub-type will not be returned."
+              }
+            ],
+            "text": "The authenticated client's search request applies to a sub-resource that the client is not authorized for. Results of this sub-type will not be returned."
+          },
+          "diagnostics": "Client not authorized for DocumentReference - Outside Record - Clinical Notes. Search results of this type have not been included."
+        },
+        {
+          "severity": "warning",
+          "code": "processing",
+          "details": {
+            "coding": [
+              {
+                "system": "urn:oid:1.2.840.114350.1.13.0.1.7.2.657369",
+                "code": "4119",
+                "display": "This response includes information available to the authorized user at the time of the request. It may not contain the entire record available in the system."
+              }
+            ],
+            "text": "This response includes information available to the authorized user at the time of the request. It may not contain the entire record available in the system."
+          }
+        }
+      ]
+    },
+    "search": {
+      "mode": "outcome"
+    }
+  }
+]

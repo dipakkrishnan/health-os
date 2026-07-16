@@ -1,0 +1,92 @@
+[
+  {
+    "link": [
+      {
+        "relation": "self",
+        "url": "https://fhir.epic.com/interconnect-fhir-oauth/api/FHIR/R4/AllergyIntolerance/eARZpey6BWRZxRZkRpc8OFJ46j3QOFrduk77hYQKWRQnp6GRlpYc2I3BfUN6pz4Anz77ow8.GJh54fUVfm3O8Vw3"
+      }
+    ],
+    "fullUrl": "https://fhir.epic.com/interconnect-fhir-oauth/api/FHIR/R4/AllergyIntolerance/eARZpey6BWRZxRZkRpc8OFJ46j3QOFrduk77hYQKWRQnp6GRlpYc2I3BfUN6pz4Anz77ow8.GJh54fUVfm3O8Vw3",
+    "resource": {
+      "resourceType": "AllergyIntolerance",
+      "id": "eARZpey6BWRZxRZkRpc8OFJ46j3QOFrduk77hYQKWRQnp6GRlpYc2I3BfUN6pz4Anz77ow8.GJh54fUVfm3O8Vw3",
+      "clinicalStatus": {
+        "coding": [
+          {
+            "system": "http://terminology.hl7.org/CodeSystem/allergyintolerance-clinical",
+            "version": "4.0.0",
+            "code": "active",
+            "display": "Active"
+          }
+        ]
+      },
+      "verificationStatus": {
+        "coding": [
+          {
+            "system": "http://terminology.hl7.org/CodeSystem/allergyintolerance-verification",
+            "version": "4.0.0",
+            "code": "unconfirmed",
+            "display": "Unconfirmed"
+          }
+        ]
+      },
+      "code": {
+        "coding": [
+          {
+            "system": "http://snomed.info/sct",
+            "code": "1631000175102",
+            "display": "Patient not asked"
+          }
+        ],
+        "text": "Not on File"
+      },
+      "patient": {
+        "reference": "Patient/erXuFYUfucBZaryVksYEcMg3",
+        "display": "Lopez, Camila Maria"
+      }
+    },
+    "search": {
+      "mode": "match"
+    }
+  },
+  {
+    "fullUrl": "urn:uuid:e5e0b073-ba6d-4d6e-922c-600aaef7d566",
+    "resource": {
+      "resourceType": "OperationOutcome",
+      "issue": [
+        {
+          "severity": "warning",
+          "code": "suppressed",
+          "details": {
+            "coding": [
+              {
+                "system": "urn:oid:1.2.840.114350.1.13.0.1.7.2.657369",
+                "code": "59204",
+                "display": "The authenticated client's search request applies to a sub-resource that the client is not authorized for. Results of this sub-type will not be returned."
+              }
+            ],
+            "text": "The authenticated client's search request applies to a sub-resource that the client is not authorized for. Results of this sub-type will not be returned."
+          },
+          "diagnostics": "Client not authorized for AllergyIntolerance - Outside Record. Search results of this type have not been included."
+        },
+        {
+          "severity": "warning",
+          "code": "processing",
+          "details": {
+            "coding": [
+              {
+                "system": "urn:oid:1.2.840.114350.1.13.0.1.7.2.657369",
+                "code": "4119",
+                "display": "This response includes information available to the authorized user at the time of the request. It may not contain the entire record available in the system."
+              }
+            ],
+            "text": "This response includes information available to the authorized user at the time of the request. It may not contain the entire record available in the system."
+          }
+        }
+      ]
+    },
+    "search": {
+      "mode": "outcome"
+    }
+  }
+]
