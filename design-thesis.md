@@ -2,439 +2,252 @@
 
 ## One-line thesis
 
-Health OS is an installable skill system that helps anyone build a private, evidence-grounded longitudinal health context on their own machine and use coding-agent runtimes to convene on-demand specialist perspectives that augment human care.
+Health OS is a local-first toolkit that gives a person's general-purpose agent durable, evidence-grounded health context and repeatable workflows for staying ahead of care.
 
 In shorter form:
 
-> User-owned longitudinal health context with an on-demand multidisciplinary review layer.
+> A user-owned health context that helps an agent understand what is true, notice what is next, and carry work across care.
 
-## Distribution thesis
+Health OS is a tool, not a destination product. It builds on the conversational interface, reasoning quality, permissions, task continuity, automations, and notifications already supplied by agent runtimes such as ChatGPT, Codex, and Claude. As those runtimes become more capable and accessible, Health OS should become more capable without rebuilding their horizontal features.
 
-Health OS is not a hosted health-data product. It is a portable set of skills, contracts, and deterministic local tools that helps each user create and operate their own health core.
+## The job
 
-The health core belongs to the user. The distributed product is the machinery and procedural intelligence required to build, maintain, and compute over it across compatible agent runtimes.
+The core job is not to collect records or answer isolated health questions. It is to keep a coherent, operational picture of care alive across daily life, clinicians, institutions, and time.
 
-```text
-Install
-    install the Health OS skills and local core
+That job is currently carried by patients and caregivers. It includes remembering what actually happened, reconciling conflicting medication lists, preparing for appointments, arranging tests, tracking changes, and translating between specialists who each see only part of the case. The burden is especially high for an older adult with several conditions and a family caregiver coordinating meals, medications, glucose checks, symptoms, hygiene, appointments, and follow-up.
 
-Boot
-    interview the user, inventory providers, authenticate,
-    fetch records, assemble state, and confirm the baseline
+Health OS should reduce that cognitive load. A visit is not the product; it is a checkpoint in a continuous loop.
 
-Daemon
-    deterministically synchronize new source records
+## Three competing truths
 
-Apps
-    run visit preparation, reconciliation, investigation,
-    and multidisciplinary review skills on demand
-```
+Health state cannot be represented by a single authoritative narrative. The agent must work interactively across three kinds of truth:
 
-The onboarding interview is part of the evidence system, not merely setup UX. It produces:
+1. **Recorded evidence:** what source systems say happened. This is objective evidence of what was recorded, not a guarantee that the record is complete or correct.
+2. **Clinical intent:** what a clinician believes, recommends, or is trying to accomplish. This may live in notes, orders, messages, or conversation and may conflict across clinicians or change over time.
+3. **Lived reality:** what the patient or caregiver actually does and experiences, including medication use, symptoms, constraints, preferences, and missed or modified plans.
 
-- A provider and record-coverage ledger
-- Explicitly patient-reported clinical items
-- Confirmed corrections to imported records
-- Unresolved conflicts and missing information
-- Questions used to reconcile the initial health state
+The system must preserve these perspectives separately and help the user reconcile them. It must never silently convert an order into confirmed use, a diagnosis code into current clinical belief, or an agent inference into fact.
 
-The agent may discover gaps, propose interpretations, and ask intelligent questions. It cannot manufacture grounded state. Every onboarding output must remain distinguishable as imported evidence, patient-reported information, a confirmed correction, an unresolved conflict, or a derived interpretation.
+Every material statement should remain distinguishable as:
 
-## The two gaps
+- Imported evidence
+- Patient- or caregiver-reported information
+- Clinical intent or interpretation
+- A confirmed correction
+- An unresolved conflict
+- A derived agent interpretation
 
-### 1. The context gap
+Interactivity is therefore part of the evidence system, not presentation polish. The agent should explain gaps, ask discriminating questions, challenge convenient assumptions, accept correction, and show how its understanding changed. It should be skeptical of its synthesis and of record completeness without being dismissive of the patient.
 
-No participant has a complete, computationally useful longitudinal record.
+## Distribution thesis: ride the agent-runtime curve
 
-- Records are fragmented across institutions.
-- Important changes are separated by months or years.
-- Medication, laboratory, symptom, and diagnosis histories conflict.
-- A short appointment cannot reconstruct the entire case.
-- Patient-visible records may themselves be incomplete.
+Health OS is not a hosted health-data service, standalone app, or custom agent platform. It is a portable set of skills, contracts, and deterministic local tools that helps a user create and operate a private health core through an agent they already use.
 
-The health core addresses this gap.
-
-It imports and preserves original records, normalizes grounded clinical items, maintains their temporal and provenance relationships, and assembles question-specific context without silently turning interpretations into facts.
-
-### 2. The expertise-coverage gap
-
-Care is necessarily specialized. Each clinician sees a case through a particular scope, time budget, and clinical responsibility.
-
-A nephrologist may focus on renal function. A neurologist may focus on neuropathy. A transplant specialist may focus on rejection risk and immunosuppression. A clinical pharmacologist may notice an interaction that is not central to any one visit.
-
-The missing capability is not merely another opinion. It is an on-demand multidisciplinary review that asks:
-
-- Which specialties are relevant to this particular case?
-- What would each specialty inspect?
-- Where do their interpretations interact or conflict?
-- What evidence supports or contradicts each interpretation?
-- What information would discriminate between competing explanations?
-- Which findings are important enough to bring to a clinician?
-
-Deep Review addresses this gap.
-
-## Product model
+The health core belongs to the user and remains useful if a model, runtime, skill, or project disappears. The agent runtime supplies the interface and horizontal capabilities. Health OS supplies health-specific context, tools, and workflow intelligence.
 
 ```text
-Installable Skill System
-    bootstraps and operates the user's health core
+General-purpose agent runtime
+    conversation, voice, reasoning, approvals, tasks,
+    automations, notifications, and artifact presentation
 
         +
 
-User-Owned Health Core
-    preserves grounded longitudinal context
-
-        +
-
-Runtime Specialist Skills
-    expand expertise coverage on demand
-
-        +
-
-Review Interface
-    compresses findings for human judgment
-```
-
-The review interface is essential. Producing twenty specialist reports would increase review load. The system succeeds only if it converts broad investigation into a small number of high-leverage, evidence-backed findings.
-
-## System boundary
-
-```text
-Health Core
-    durable evidence and context
-
-        +
-
-Agent Skills
-    repeatable workflows
-
-        +
-
-Runtime Agents
-    question-specific reasoning
+Health OS
+    local evidence, provenance, health semantics,
+    deterministic commands, and care workflows
 
         =
 
-Cited Health Artifact
+An agent that can carry health work across time
 ```
 
-### Health core
+This is **batteries included, infrastructure omitted**. A Health OS skill may offer to configure the runtime's native scheduled task or automation. Health OS should provide reliable commands and workflow recipes for that automation, not build another scheduler, notification service, chat interface, or account system.
 
-The trusted, model-independent data plane.
+The distribution risk is discovery and setup, not the absence of a new consumer destination. The toolkit should be installable wherever capable general agents run and should improve with them.
 
-It:
-
-- Imports and synchronizes health records.
-- Preserves original sources.
-- Normalizes grounded clinical items.
-- Maintains temporal and provenance relationships.
-- Exposes timelines and question-specific case packets.
-- Validates citations and snapshots.
-- Stores user corrections without rewriting history.
-
-### Agent skills
-
-Thin, replaceable workflow definitions.
-
-They specify:
-
-- How to request context from the core.
-- Which investigation to perform.
-- How specialist passes should be scoped.
-- What output structure to produce.
-- How claims must cite evidence.
-- What uncertainty and safety language is required.
-
-Skills do not own the health record, parse source formats, or become the source of truth.
-
-### Runtime agents
-
-Ephemeral compute.
-
-They may reconstruct timelines, compare trends, investigate contradictions, search literature, or prepare clinician-facing summaries. Their conclusions remain derived artifacts and never silently become grounded health state.
-
-## Foundational data flow
+## The continuity loop
 
 ```text
-Raw source
+Connect one or more health systems
     ↓
-Grounded clinical items
+Refresh their records into the local core
     ↓
-Timeline and state views
+Interview the patient or caregiver about coverage and lived reality
     ↓
-Question-specific case packet
+Confirm a baseline while preserving conflicts and gaps
     ↓
-Cross-specialty Deep Review
+Notice what is next, especially the next appointment or required follow-up
     ↓
-Cited review artifact
+Prepare proactively and ask only what the record cannot answer
+    ↓
+Let the user inspect, correct, interrupt, and approve
+    ↓
+After the event, refresh and reconcile what changed
+    ↓
+Update the durable context and continue
 ```
 
-The repository preserves evidence. Views compress it. Case packets select it. Agents interpret it.
+### First refresh
+
+The first refresh is evidence collection, not truth acquisition. It should:
+
+- Inventory providers, institutions, portals, and known missing sources.
+- Connect multiple health systems when care is fragmented.
+- Report exactly which organizations, date ranges, and resource types were queried.
+- Import appointments as well as clinical history.
+- Ask the patient or caregiver what is current, what is wrong, and what the record omits.
+- Reconcile medications, active concerns, clinician roles, and immediate follow-up.
+- Produce a confirmed baseline that preserves disagreement rather than flattening it.
+- Offer useful runtime-native automations, with clear permission and an easy way to stop them.
+
+### The first magic moment
+
+The agent identifies the next known appointment and begins useful work before the user has to reconstruct the case.
+
+It should compare the current record with the last relevant visit, identify interval changes, conflicting plans, medication uncertainty, missing tests, and open follow-up; ask focused questions about lived reality; and produce a cited visit-preparation artifact. After the visit, it should refresh the relevant systems, detect new notes, orders, results, and appointments, and interactively reconcile the new plan with what will actually happen.
+
+The result appears in the agent task where the work is already happening and is saved as a local, cited artifact. The user can inspect the underlying evidence, correct the agent, decline actions, or interrupt an automation through the host runtime.
+
+## System boundary
+
+### Local health core
+
+The trusted, model-independent data plane. It:
+
+- Maintains separate connections to multiple health systems.
+- Imports and refreshes records and appointments.
+- Preserves exact original sources and versions.
+- Normalizes source-grounded clinical items.
+- Stores patient and caregiver reports without confusing them with imported evidence.
+- Maintains time, provenance, conflicts, corrections, coverage, and reconciliation history.
+- Exposes timelines, state views, deltas, and question-specific case packets.
+- Validates citations and repository snapshots.
+
+### Health OS skills
+
+Thin, replaceable workflow definitions. They specify:
+
+- How to establish and challenge a baseline.
+- How to request deterministic context from the core.
+- Which questions require interaction with the user.
+- What actions may be proposed and what approval is required.
+- What artifact to produce and how every claim must cite evidence.
+- When to offer a host-runtime automation.
+- How uncertainty, conflicts, and safety boundaries must be expressed.
+
+Skills do not own the record, implement a general chat UI, or become the source of truth.
+
+### General-purpose agent runtime
+
+The runtime supplies natural-language and voice interaction, reasoning, permissions, task continuity, scheduling, notifications, and artifact presentation. It may investigate contradictions, search literature, prepare summaries, or act through connected systems when the user has granted access.
+
+The agent's conclusions remain derived artifacts. The runtime may change; the user's local evidence and reconciled context remain.
 
 ## Core primitives
 
+### Connection and coverage
+
+A connection represents one authorized source system and the permissions granted to it. Coverage records what was actually queried: organization, resource type, date range, status, and failure. Several connections may describe the same person's care without implying that any one is complete.
+
 ### Source
 
-An immutable imported object:
-
-- FHIR resource or response
-- Clinical note
-- PDF
-- Image
-- Wearable export
-- Patient journal entry
+An immutable imported object such as a FHIR resource or response, clinical note, PDF, image, wearable export, portal message, or patient journal entry.
 
 ### Clinical item
 
-A normalized, source-grounded piece of health information:
+A normalized, source-grounded piece of health information such as a laboratory result, medication order, medication-use report, diagnosis, symptom, procedure, vital sign, appointment, or imaging finding. Every clinical item references its source and precise supporting evidence.
 
-- Laboratory result
-- Medication order
-- Medication-use report
-- Diagnosis
-- Symptom report
-- Procedure
-- Vital sign
-- Imaging finding
+### Perspective and reconciliation
 
-Every clinical item references its source and precise supporting evidence.
+A perspective captures recorded evidence, clinical intent, or lived reality without forcing agreement. A reconciliation records how the user and agent resolved—or deliberately did not resolve—a conflict, what evidence was considered, who confirmed it, and when.
 
-“Clinical item” is preferable to a universal atomic triple because it accommodates values, units, ranges, statuses, dosage structure, and multiple relevant times without discarding clinical meaning.
+### Timeline and state
 
-### Timeline
-
-A generated chronological view over clinical items.
-
-The timeline is not a separate source of truth. Its entries reference the underlying clinical items.
+Generated views over clinical items, perspectives, and reconciliations. They are not independent sources of truth and always point back to underlying evidence.
 
 ### Case packet
 
-An immutable, question-specific context snapshot containing:
+An immutable, question-specific snapshot containing the question or event, relevant items and perspectives, selected excerpts, known conflicts, missing information, coverage limitations, and repository snapshot ID. It is the primary interface between the health core and agent workflows.
 
-- The question
-- Relevant clinical items
-- Timeline entries
-- Selected source excerpts
-- Known conflicts
-- Missing information
-- Repository snapshot ID
+### Claim and artifact
 
-This is the primary interface between the health core and agent skills.
-
-### Claim
-
-A runtime interpretation supported or contradicted by clinical items.
-
-Claims are derived and contain:
-
-- Supporting item IDs
-- Contradicting item IDs
-- Confidence
-- Generation method
-- Review status
-
-### Review
-
-A saved runtime artifact containing the case packet, claims, output, and execution metadata.
+A claim is a derived interpretation with supporting and contradicting evidence, confidence, method, and review status. An artifact saves the case packet, claims, output, and execution metadata so the user can inspect and revisit the work.
 
 ## Health Deep Review
 
-Deep Review is not “ask several agents for opinions.” It is procedural scaffolding that calibrates the investigation, decomposes it into specialist passes, verifies claims, independently challenges findings, and only then synthesizes a prioritized report.
+Deep Review remains a high-value escalation workflow, not the top-level product thesis. When a case warrants it, the agent can assemble a grounded case packet, select relevant specialist perspectives, run independent and cross-specialty passes, verify evidence and literature, challenge preliminary findings, and compress the survivors into a short cited report.
 
-```text
-Patient question or review goal
-    ↓
-Calibrate scope and urgency
-    ↓
-Assemble grounded case packet
-    ↓
-Select relevant specialist perspectives
-    ↓
-Run independent specialist passes
-    ↓
-Run cross-specialty interaction pass
-    ↓
-Verify evidence and literature
-    ↓
-Run adversarial critique
-    ↓
-Produce prioritized synthesis
-    ↓
-Present patient and clinician review interface
-```
+It is useful for complex multisystem questions, medication-condition interactions, competing explanations, and unclear monitoring gaps. It should not turn routine continuity work into a committee of agents.
 
-### Calibration
+Each material finding should include:
 
-Determine what the user is trying to accomplish:
-
-- Prepare for an appointment
-- Investigate a longitudinal change
-- Reconcile medications
-- Understand competing explanations
-- Identify missing follow-up
-- Review a complex multisystem case
-
-Calibration also establishes what the system should not attempt.
-
-### Dynamic specialist selection
-
-Specialist perspectives are selected from the case rather than run as a fixed committee.
-
-For example, a question involving tingling, tacrolimus, and rising creatinine might route to:
-
-- Nephrology
-- Neurology
-- Transplant medicine
-- Clinical pharmacology
-- Electrolyte and metabolic review
-
-Each specialist receives the same grounded case packet but a distinct review mandate.
-
-These agents provide specialist review perspectives; they do not represent actual clinicians or replace specialist care.
-
-### Specialist passes
-
-A specialist pass inspects evidence through a defined clinical lens. For example:
-
-```text
-Clinical pharmacology pass:
-- Reconstruct medication exposure.
-- Identify dose changes and interacting drugs.
-- Check whether symptoms or laboratory changes followed exposure.
-- Find evidence against a medication-related explanation.
-- Identify monitoring information that is absent.
-```
-
-### Cross-specialty interaction pass
-
-This pass identifies relationships that may not be central to any individual specialty:
-
-- One treatment improving one system while worsening another
-- Symptoms crossing conventional specialty boundaries
-- Medication–condition interactions
-- Conflicting specialty assumptions
-- Findings whose meaning changes when considered together
-- Tests ordered in one lane that answer questions in another
-
-### Adversarial critique
-
-Critique agents attempt to defeat preliminary findings:
-
-- Is the temporal association spurious?
-- Is there a more ordinary explanation?
-- Is supposedly missing information present elsewhere?
-- Does the cited literature apply to this patient?
-- Is a conclusion based on a medication order rather than confirmed use?
-- Is the record incomplete in a way that invalidates the interpretation?
-
-Only findings that survive critique reach the final report.
-
-## Review output
-
-The output should reduce review load rather than expose the user to raw agent discussion.
-
-Each material finding should contain:
-
-```text
-1. Cross-specialty finding
-   What appears connected.
-
-2. Why it matters
-   Concise clinical relevance.
-
-3. Evidence for
-   Grounded record citations.
-
-4. Evidence against
-   Contradictions and alternative explanations.
-
-5. What remains unknown
-   Missing or unreliable information.
-
-6. Useful next question
-   A question for the appropriate clinician.
-```
-
-Findings should be ranked as:
-
-- Time-sensitive issue to raise
-- Significant cross-specialty question
-- Record inconsistency
-- Monitoring gap
-- Lower-confidence hypothesis
+1. What appears connected and why it matters.
+2. Evidence for and evidence against.
+3. Which truth category each assertion belongs to.
+4. What remains unknown or unreliable.
+5. The most useful next question or action for the appropriate human.
 
 ## Design principles
 
-1. **Evidence before interpretation.** No factual statement exists without a resolvable source reference. Derived conclusions remain distinguishable from source-grounded information.
+1. **Interaction is reconciliation.** Conversation is how the system discovers and preserves the differences between the record, clinical intent, and lived reality.
+2. **Evidence before interpretation.** No factual claim exists without a resolvable source or an explicit patient, caregiver, or clinician attribution.
+3. **Be constructively skeptical.** Test record completeness, agent synthesis, and user assumptions; ask questions that could change the conclusion.
+4. **Preserve sources; version understanding.** Imported sources are append-only. Corrections and new interpretations never rewrite prior evidence.
+5. **Time is first-class.** Preserve effective, recorded, and import time. Unknown or approximate dates remain explicit.
+6. **Provenance is structural.** Citations are identifiers and evidence locators, not prose added after generation.
+7. **Completeness is never assumed.** Expose queried systems, scopes, resource types, date ranges, failures, and missing sources.
+8. **Local context is durable; skills and runtimes are replaceable.** The user-owned core outlives any model or interface.
+9. **Ride the agent-runtime curve.** Reuse the host's conversation, approvals, automations, notifications, and connected accounts instead of rebuilding them.
+10. **Autonomy follows permission.** Read, write, message, or schedule only through connected systems and scopes the user has granted; make consequential actions inspectable and interruptible.
+11. **Derived knowledge cannot silently become fact.** Promotion into confirmed state requires explicit reconciliation.
+12. **Local-first includes compute policy.** Any transmission to an external model or tool must be visible and governed by policy.
+13. **Breadth must end in compression.** The result should reduce cognitive load, not expose raw agent work.
+14. **Build data breadth through workflows.** Add notes, vitals, procedures, messages, and other feeds when a concrete workflow needs them, not to chase nominal completeness.
 
-2. **Preserve sources; version interpretations.** Imported sources are append-only. Corrections, normalization changes, and new interpretations create new versions without rewriting prior evidence.
+## What compounds
 
-3. **Time is first-class.** Preserve effective time, recorded time, and import time. Unknown or approximate dates remain explicitly unknown or approximate.
+The durable asset is not a proprietary interface or a single model answer. It is the user's local, increasingly reconciled longitudinal context:
 
-4. **Provenance is structural.** Citations are identifiers and evidence locators, not prose added after generation.
+- Original evidence from multiple systems
+- Coverage and permission history
+- Normalized clinical items and temporal relationships
+- Patient and caregiver reports
+- Clinical intent and competing interpretations
+- Corrections, conflicts, and reconciliation history
+- Cited workflow artifacts
 
-5. **Completeness is never assumed.** The system records which sources, organizations, date ranges, and resource types were queried and exposes gaps to runtime consumers.
-
-6. **Skills are replaceable; context is durable.** Codex, Claude Code, and future runtimes may use different skills over the same health-core contract.
-
-7. **Derived knowledge cannot silently become fact.** Agent conclusions may be saved as claims or reviews. Promotion into user-reported state requires explicit confirmation.
-
-8. **Local-first includes compute policy.** Data is stored locally by default. Any transmission to an external model or tool must be visible and governed by an explicit policy.
-
-9. **Optimize for auditability.** A review preserves its snapshot, context, citations, model, and workflow version. Exact model reproduction is not promised.
-
-10. **Breadth must end in compression.** Specialist passes are valuable only when synthesis reduces the findings to a tractable human review surface.
-
-11. **Build views when demanded.** Timelines, medication histories, and lab trends are useful early. General episode detection and universal terminology mapping should be added only when real workflows require them.
-
-## Product thesis
-
-The primary product is not the answer to a health question. It is the ability to repeatedly ask new questions against the same trustworthy longitudinal context and convene the relevant review perspectives at runtime.
-
-Once the health core exists, capabilities become skills:
+Once this core exists, new capabilities become relatively small skills:
 
 ```text
 health core
-    ├── prepare for a visit
-    ├── reconcile medications
+    ├── prepare for the next visit
+    ├── reconcile medications and care plans
+    ├── detect missing follow-up
     ├── investigate a trend
-    ├── reconstruct a timeline
-    ├── identify record conflicts
+    ├── coordinate caregiver work
     └── perform a cross-specialty Deep Review
 ```
-
-Each skill is relatively inexpensive to create because ingestion, grounding, chronology, provenance, and case assembly are shared.
-
-## Defensible asset
-
-The durable asset is the user-controlled longitudinal context:
-
-- Original evidence
-- Normalized clinical items
-- Temporal relationships
-- Corrections and reconciliation history
-- Provenance graph
-- Review history
-
-Models, prompts, and agent runtimes will change. The grounded context remains useful across all of them.
 
 ## Non-goals
 
 Health OS is not initially:
 
+- A standalone consumer app or custom chat interface
+- A hosted health-data account or record custodian
+- A scheduler, notification service, or general agent orchestrator
 - A replacement electronic health record
-- A clinical decision-support device
 - An autonomous diagnostic or treatment system
-- A substitute for specialist care
+- A substitute for clinicians or caregiver judgment
 - A universal healthcare ontology
-- A guarantee of complete medical records
+- A guarantee of complete or correct medical records
 - A chatbot that answers without evidence
 
-## The two foundational pillars
+## The three foundational pillars
 
 ```text
-Pillar 1: Grounded longitudinal context
-Pillar 2: On-demand multidisciplinary review
+Pillar 1: User-owned, evidence-grounded longitudinal context
+Pillar 2: Interactive reconciliation across the three truths
+Pillar 3: Agent-native workflows that anticipate and carry care forward
 ```
 
-The core makes the review trustworthy. The review makes the core worth building.
+The core makes the agent trustworthy. Interaction makes the context honest. The runtime makes the system useful in the flow of life.
