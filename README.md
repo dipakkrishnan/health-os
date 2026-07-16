@@ -10,11 +10,12 @@ every normalized clinical item points to the exact response bytes it came from, 
 **Skills** (`skills/`) are thin, replaceable workflows that present that record.
 Every stated fact carries a citation that resolves back to source bytes.
 
-- `timeline` — grounded chronological views: lab trends, medication history,
-  conditions, encounters.
-- `memory` — bootstraps and maintains the persistent, cited memory of the record
-  (`memory/` in the data repo: timeline, medications, conditions, gaps), updated
-  incrementally from sync deltas and citation-checked by `verify`.
+- `memory` — builds an understanding of your data first: bootstraps and maintains
+  the persistent, cited memory of the record (`memory/` in the data repo: timeline,
+  medications, conditions, gaps), updated incrementally from sync deltas and
+  citation-checked by `verify`.
+- `chart` — consults that understanding to answer questions: lab trends, medication
+  history, conditions, encounters, grounded chronological views — every fact cited.
 
 More to come: visit prep, medication reconciliation, cross-specialty deep review.
 

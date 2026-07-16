@@ -17,7 +17,7 @@ regenerable from it. You never write to the database itself.
 2. Resolve the data repo: `$HEALTH_OS_REPO` if set, else `~/health-data` if it
    exists, else `spike/health-data` (sandbox) in the project.
 3. Read `references/memory_format.md` for the file layout and manifest schema, and
-   the timeline skill's `references/grounding_rules.md` — memory files obey the same
+   the chart skill's `references/grounding_rules.md` — memory files obey the same
    rules: every factual line cites `[ci:<12-char id>]`, orders are not use, unknown
    dates stay unknown, placeholders like "Not on File" are absences.
 4. Read `memory/manifest.json` if it exists, then choose the path:

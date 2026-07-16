@@ -1,11 +1,13 @@
 ---
-name: timeline
-description: Build a grounded chronological view of the user's health record from the local health core. Use when the user asks about their health history, a lab trend, medication history, "what happened when", changes over time, or wants a timeline of conditions, encounters, or results. Every statement of fact must cite a clinical item id.
+name: chart
+description: Consult the user's health chart — answer any question about their health record from the local health core, oriented by the persistent memory when it exists. Use when the user asks about their health history, a lab trend, medication history, allergies, conditions, "what happened when", changes over time, or wants a timeline of results or encounters. Every statement of fact must cite a clinical item id.
 ---
 
-# Health Timeline
+# Chart
 
-Use this skill to present the user's local health record as a grounded chronological view. The record is the source of truth; you are a presenter, not an author. You never write to the health database.
+Use this skill to consult the user's local health record and answer questions from
+it. The record is the source of truth; you are a presenter, not an author. You never
+write to the health database.
 
 ## Start Here
 

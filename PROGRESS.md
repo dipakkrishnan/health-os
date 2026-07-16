@@ -54,6 +54,8 @@
   - Timeline skill reads memory for orientation and flags staleness
   - GitHub repo public: https://github.com/dipakkrishnan/health-os (marketplace install live)
   - App marked ready for production on fhir.epic.com (2026-07-16); production propagation underway
+  - Skill renamed timeline -> chart (2026-07-16): memory writes the understanding, chart consults it;
+    "timeline" remains the name of the chronological CLI query and the memory/timeline.md file
 
 ## Next
 1. Once Epic propagation completes:
