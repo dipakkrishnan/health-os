@@ -11,6 +11,10 @@ FHIR HTTP response (exact bytes)
     -> versioned FHIR resources
     -> regenerable clinical_items
     -> skill-owned timelines, case packets, and reviews
+
+Explicit patient/caregiver statement
+    -> immutable memory/sources report
+    -> reconciled memory views
 ```
 
 - `raw_blobs` are immutable and content-addressed.
@@ -18,6 +22,8 @@ FHIR HTTP response (exact bytes)
 - `resources` retain every distinct content version of a FHIR resource.
 - `clinical_items` are deterministic, regenerable indexes over resources.
 - Timelines and agent interpretations are downstream views, not source evidence.
+- Patient/caregiver reports are separate local sources, cited as `[report:…]`; they
+  never become imported clinical-record facts.
 
 ## Identity
 

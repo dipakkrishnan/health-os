@@ -11,9 +11,9 @@ every normalized clinical item points to the exact response bytes it came from, 
 Every stated fact carries a citation that resolves back to source bytes.
 
 - `memory` — builds an understanding of your data first: bootstraps and maintains
-  the persistent, cited memory of the record (`memory/` in the data repo: timeline,
-  medications, conditions, gaps), updated incrementally from sync deltas and
-  citation-checked by `verify`.
+  persistent, cited context across recorded evidence, clinical intent, and lived
+  reality. Imported facts and explicit patient/caregiver reports retain different,
+  mechanically checked citations.
 - `chart` — consults that understanding to answer questions: lab trends, medication
   history, appointments, notes, open orders, conditions, encounters, and grounded
   chronological views — every fact cited.

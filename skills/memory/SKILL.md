@@ -1,66 +1,96 @@
 ---
 name: memory
-description: Bootstrap and maintain the persistent, cited memory of the user's health record — a set of markdown files (timeline, medications, conditions, gaps) derived from the local health core. Use after a sync reports new items, when the user asks to update or rebuild their health memory, or when another health skill finds the memory missing or stale.
+description: Build and maintain the user's durable, cited health context across recorded evidence, clinical intent, and lived reality. Use after record refreshes, when memory is missing or stale, when the patient or caregiver confirms or corrects something, or when another health workflow needs the current care plan, conflicts, coverage, or upcoming appointments.
 ---
 
 # Health Memory
 
-The memory is the agent's durable, consolidated understanding of the health record:
-`memory/` inside the data repo, containing a manifest and cited markdown files. It is
-a derived cache — the database is always the truth, and the memory must be fully
-regenerable from it. You never write to the database itself.
+Maintain `memory/` inside the user's data repo as a reconciled working context. The
+FHIR database is authoritative only for what source systems recorded. Explicit
+patient and caregiver reports are separate local sources. Memory views bring those
+sources together without pretending they agree.
 
-## Start Here
+## Resolve the environment
 
 1. Resolve the plugin root without assuming a runtime: use `$PLUGIN_ROOT` when
    available (Codex), then `$CLAUDE_PLUGIN_ROOT` (Claude), otherwise locate the
    nearest parent of this skill or the working directory containing
    `.codex-plugin/plugin.json` or `.claude-plugin/plugin.json`. Confirm
    `<plugin-root>/core/health_core.py` exists; never guess a path.
-2. Resolve the data repo: `$HEALTH_OS_REPO` if set, else `~/health-data` if it
-   exists. If neither exists, stop and help the user connect a health system.
-   Never silently use bundled or sandbox data.
-3. Before the first record access in a task, explain that selected local record
-   context will be processed by the active agent runtime and follow its configured
-   data policy. Do not read the record if the user declines.
-4. Read `references/memory_format.md` for the file layout and manifest schema, and
-   the chart skill's `references/grounding_rules.md` — memory files obey the same
-   rules: every factual line cites `[ci:<12-char id>]`, orders are not use, unknown
-   dates stay unknown, placeholders like "Not on File" are absences.
-5. Read `memory/manifest.json` if it exists, then choose the path:
-   - **No manifest → bootstrap.** Query the record per domain (`timeline --kind ...`),
-     consolidate, and write the memory files. Duplicate assertions (e.g. the same
-     diagnosis recorded per encounter) become ONE line with multiple citations.
-   - **Manifest present → incremental update.** Run
-     `delta --repo <repo> --after <synced_through_run>`. If `new_items` is empty,
-     report that memory is current and stop. Otherwise process only the delta.
-6. For each delta item, ask what existing memory it touches — a new item may extend
-   the timeline, but it may also contradict a line (a condition resolved, a corrected
-   result, a med discontinued). Edit the affected line rather than appending a
-   duplicate; move superseded statements to the file's `## History` section with a
-   note of what replaced them.
-7. Write `manifest.json` with `synced_through_run` = the `latest_run` from the delta
-   (or `latest_sync_run_id` from `status` when bootstrapping) and `updated_at`.
-8. Always finish with `verify --repo <repo>` — it resolves every `[ci:…]` citation in
-   the memory files against current clinical items and fails on danglers. A failing
-   verify means fix the memory before reporting success.
+2. Resolve the data repo from `$HEALTH_OS_REPO`, then `~/health-data`. If neither
+   exists, stop and help the user connect a health system. Never use sandbox data.
+3. Before the first record access in a task, explain that selected local context
+   will be processed by the active agent runtime and follow its configured data
+   policy. Stop if the user declines.
+4. Read `references/memory_format.md` completely before writing memory.
+
+## Preserve the three truths
+
+- **Recorded evidence:** describe only what the imported source establishes and cite
+  `[ci:<id>]` on every claim.
+- **Clinical intent:** cite the note, order, or message expressing it. Label intent
+  reconstructed from several sources as interpretation.
+- **Lived reality:** use only an explicit patient or caregiver statement preserved
+  with `record-report`; cite it as `[report:<id>]` and name the reporter role.
+
+Never convert an order or dispense into confirmed use. Never infer clinical intent
+from a diagnosis code alone. Never treat an empty or successful query as proof that
+nothing happened.
+
+## Update memory
+
+1. Run `status --repo <repo>`. Read every connection's latest refresh, permissions,
+   and coverage. `not_queried`, `error`, and missing systems remain visible gaps.
+2. Read `memory/manifest.json` and the relevant views if present.
+3. Choose the path:
+   - **No manifest:** query the record by domain, create the version 2 views from
+     `memory_format.md`, and set the watermark from `latest_sync_run_id`.
+   - **Version 1 manifest:** preserve existing files, split `gaps.md` into coverage
+     and conflicts, add the new views, and upgrade only after reviewing each line's
+     truth category.
+   - **Version 2 manifest:** run `delta --repo <repo> --after <synced_through_run>`
+     and process only new current items.
+4. For every new item, ask which existing understanding it confirms, changes, or
+   contradicts. Update the affected view; do not merely append another assertion.
+5. A record change may alter recorded evidence or reveal a possible conflict. It
+   does not overwrite a patient report or prove that the operational plan changed.
+6. Put unresolved disagreements in `conflicts.md` with evidence for each side, the
+   coverage limitation, and the smallest question that could resolve the conflict.
+7. Write `manifest.json` with the latest completed run and `memory_version: 2`.
+8. Finish with `verify --repo <repo>`. Fix every dangling clinical-item or report
+   citation before reporting success.
+
+## Record explicit reports
+
+When the user explicitly states what they or the patient do, experience, prefer, or
+believe, ask permission to preserve it before the first write in a task. Store a
+verbatim statement or a paraphrase the user has confirmed, then summarize it:
+
+```bash
+python3 <plugin-root>/core/health_core.py record-report \
+  --repo <repo> --reporter-role "patient|caregiver" \
+  --subject "who the statement concerns" --statement "verbatim or confirmed statement"
+```
+
+If it corrects an earlier report, add `--supersedes <prior-report-id>`. Do not edit
+or delete the prior source file. Do not call `record-report` for agent inference or
+for information merely copied from the clinical record.
+
+## Skeptical pass
+
+Before finishing, test the memory against these failure modes:
+
+- Does the medication view distinguish ordered, dispensed, intended, and reported use?
+- Do plans name whose intent they represent and whether the patient follows them?
+- Are conflicting clinicians or systems still visible?
+- Could a “gap” actually be missing source coverage?
+- Did a newer item truly supersede the old one, or merely add another perspective?
+- Is every operational next step assigned, timed, and grounded—or explicitly unknown?
+
+Surface unresolved questions; do not manufacture resolution.
 
 ## Rebuild
 
-On explicit request ("rebuild my health memory"), when `verify` fails irreparably, or
-when the manifest's watermark run no longer exists: delete the memory files and
-bootstrap from scratch. Incremental updates accumulate small drift; a rebuild is
-cheap and the record loses nothing — that is the point of memory being derived.
-
-## Principles
-
-- Memory is cache; the database is truth. Never resolve a conflict in memory's favor.
-- Consolidation is the value: many items, one cited line.
-- Deltas can invalidate, not just append. Look for contradictions before adding.
-- Interpretation ("likely one continuing episode") is labeled as such, in place.
-- Patient-reported facts are recorded in memory only as clearly patient-reported;
-  promotion into the record itself is a core concern, not a memory edit.
-
-## Bundled Resources
-
-- `references/memory_format.md`: file layout, manifest schema, consolidation rules.
+On explicit request or irreparable citation drift, rebuild the Markdown views and
+manifest from the clinical core plus `memory/sources/`. Never delete
+`memory/sources/`; those files are user-provided evidence, not derived cache.

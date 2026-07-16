@@ -293,11 +293,22 @@ class CoreTest(unittest.TestCase):
 
             memory_dir = repo / "memory"
             memory_dir.mkdir()
+            patient_report = health_core.record_report(
+                repo, "patient", "I take tacrolimus twice daily", "sandbox patient"
+            )
+            correction = health_core.record_report(
+                repo, "patient", "I take tacrolimus once daily", "sandbox patient",
+                patient_report["id"][:12],
+            )
+            self.assertEqual(correction["supersedes"], patient_report["id"])
             (memory_dir / "timeline.md").write_text(
-                f"- Creatinine 1.5 mg/dL [ci:{lab['id'][:12]}]\n- bogus [ci:deadbeef0000]\n"
+                f"- Creatinine 1.5 mg/dL [ci:{lab['id'][:12]}]\n"
+                f"- Reports once-daily tacrolimus [report:{correction['id'][:12]}]\n"
+                "- bogus [ci:deadbeef0000]\n"
             )
             report = health_core.verify(repo)
             self.assertEqual(report["memory_citations"]["checked"], 1)
+            self.assertEqual(report["memory_citations"]["reports_checked"], 1)
             self.assertEqual(len(report["memory_citations"]["bad"]), 1)
             self.assertEqual(report["memory_citations"]["bad"][0]["citation"], "deadbeef0000")
 

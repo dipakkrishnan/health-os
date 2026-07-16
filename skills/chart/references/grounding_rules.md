@@ -36,5 +36,7 @@ absence. A successful unbounded search means “all the source returned,” not 
 
 ## Citations resolve
 
-Every factual line ends with `[ci:<first 12 chars of clinical_item_id>]`. A citation
-you cannot resolve with `cite` must not appear. Multiple items may back one line.
+Every imported-record claim ends with `[ci:<first 12 chars of clinical_item_id>]`.
+Explicit patient/caregiver statements use `[report:<first 12 chars>]` and name the
+reporter role. A citation that fails `verify` must not appear. Multiple sources may
+back one line only when their truth categories remain visible.

@@ -1049,9 +1049,44 @@ def cite(repo: Path, item_id_prefix: str) -> dict[str, Any]:
     }
 
 
+def record_report(
+    repo: Path,
+    reporter_role: str,
+    statement: str,
+    subject: str | None = None,
+    supersedes: str | None = None,
+) -> dict[str, Any]:
+    """Preserve an explicit patient/caregiver statement as a local source."""
+    if not database_path(repo).is_file():
+        raise SystemExit(f"No health repository at {repo}")
+    if not reporter_role.strip() or not statement.strip():
+        raise SystemExit("Reporter role and statement must not be empty")
+    sources = repo / "memory" / "sources"
+    sources.mkdir(parents=True, exist_ok=True)
+    if supersedes:
+        if not re.fullmatch(r"[0-9a-fA-F]{6,32}", supersedes):
+            raise SystemExit("Superseded report id must be a 6-32 character hex prefix")
+        matches = list(sources.glob(f"{supersedes}*.json"))
+        if len(matches) != 1:
+            raise SystemExit(f"Superseded report prefix must resolve once; found {len(matches)}")
+        supersedes = matches[0].stem
+    report = {
+        "id": uuid.uuid4().hex,
+        "recorded_at": utcnow(),
+        "reporter_role": reporter_role.strip(),
+        "subject": subject.strip() if subject else None,
+        "statement": statement.strip(),
+        "supersedes": supersedes,
+    }
+    destination = sources / f"{report['id']}.json"
+    temporary = destination.with_suffix(".tmp")
+    temporary.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n")
+    os.replace(temporary, destination)
+    return report
+
+
 def verify(repo: Path) -> dict[str, Any]:
-    """Grounding check: every evidence pointer on every current clinical item
-    must resolve against the stored raw response bytes."""
+    """Verify clinical evidence pointers and durable-memory citations."""
     resolved, dangling = 0, []
     with connect(repo) as db:
         rows = db.execute(
@@ -1072,11 +1107,39 @@ def verify(repo: Path) -> dict[str, Any]:
                     {"clinical_item_id": row["clinical_item_id"], "kind": row["kind"],
                      "display": row["display"], "field": field, "pointer": ptr}
                 )
-    memory_citations: dict[str, Any] = {"checked": 0, "bad": []}
+    memory_citations: dict[str, Any] = {"checked": 0, "reports_checked": 0, "bad": []}
     memory_dir = repo / "memory"
     if memory_dir.is_dir():
         with connect(repo) as db:
             ids = [r[0] for r in db.execute("SELECT clinical_item_id FROM current_clinical_items")]
+        reports: dict[str, dict[str, Any]] = {}
+        for source in sorted((memory_dir / "sources").glob("*.json")):
+            try:
+                payload = json.loads(source.read_text())
+            except (OSError, json.JSONDecodeError) as error:
+                memory_citations["bad"].append({"file": str(source.relative_to(memory_dir)), "error": str(error)})
+                continue
+            required = ("id", "recorded_at", "reporter_role", "statement")
+            if not isinstance(payload, dict) or any(not payload.get(field) for field in required):
+                memory_citations["bad"].append({
+                    "file": str(source.relative_to(memory_dir)),
+                    "error": f"report source requires {', '.join(required)}",
+                })
+                continue
+            if payload["id"] != source.stem:
+                memory_citations["bad"].append({
+                    "file": str(source.relative_to(memory_dir)),
+                    "error": "report id must match filename",
+                })
+                continue
+            reports[payload["id"]] = payload
+        for report_id, payload in reports.items():
+            supersedes = payload.get("supersedes")
+            if supersedes and supersedes not in reports:
+                memory_citations["bad"].append({
+                    "file": f"sources/{report_id}.json",
+                    "error": f"superseded report does not exist: {supersedes}",
+                })
         for md_file in sorted(memory_dir.glob("*.md")):
             for prefix in re.findall(r"\[ci:([0-9a-fA-F]{6,64})\]", md_file.read_text()):
                 matches = [i for i in ids if i.startswith(prefix.lower())]
@@ -1085,6 +1148,14 @@ def verify(repo: Path) -> dict[str, Any]:
                 else:
                     memory_citations["bad"].append(
                         {"file": md_file.name, "citation": prefix, "matches": len(matches)}
+                    )
+            for prefix in re.findall(r"\[report:([0-9a-fA-F]{6,64})\]", md_file.read_text()):
+                matches = [report_id for report_id in reports if report_id.startswith(prefix.lower())]
+                if len(matches) == 1:
+                    memory_citations["reports_checked"] += 1
+                else:
+                    memory_citations["bad"].append(
+                        {"file": md_file.name, "report": prefix, "matches": len(matches)}
                     )
     return {
         "items": len(rows),
@@ -1138,6 +1209,13 @@ def main() -> None:
     delta_parser.add_argument("--repo", type=Path, required=True)
     delta_parser.add_argument("--after", required=True, help="Sync run id the memory is current through")
 
+    report_parser = subparsers.add_parser("record-report")
+    report_parser.add_argument("--repo", type=Path, required=True)
+    report_parser.add_argument("--reporter-role", required=True)
+    report_parser.add_argument("--statement", required=True)
+    report_parser.add_argument("--subject")
+    report_parser.add_argument("--supersedes", help="Prior report id prefix corrected by this report")
+
     args = parser.parse_args()
     if args.command == "init":
         initialize(
@@ -1165,6 +1243,10 @@ def main() -> None:
         print(json.dumps(timeline(args.repo, args.kind, args.query, args.since, args.until), indent=2))
     elif args.command == "cite":
         print(json.dumps(cite(args.repo, args.item_id), indent=2))
+    elif args.command == "record-report":
+        print(json.dumps(record_report(
+            args.repo, args.reporter_role, args.statement, args.subject, args.supersedes,
+        ), indent=2))
 
 
 if __name__ == "__main__":
