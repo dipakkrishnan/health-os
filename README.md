@@ -15,7 +15,7 @@ Every stated fact carries a citation that resolves back to source bytes.
   reality. Imported facts and explicit patient/caregiver reports retain different,
   mechanically checked citations.
 - `chart` — consults that understanding to answer questions: lab trends, medication
-  history, appointments, notes, open orders, conditions, encounters, and grounded
+  history, care plans, notes, open orders, conditions, encounters, and grounded
   chronological views — every fact cited.
 
 More to come: visit prep, medication reconciliation, cross-specialty deep review.

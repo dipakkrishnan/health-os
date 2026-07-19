@@ -33,7 +33,7 @@ Updated 2026-07-16
 ### Local health core
 
 - SQLite contract and schema with append-only resource versions, exact content-addressed FHIR response bytes, and per-run/page audit records.
-- Current ingestion: patient demographics, labs, vitals, medication orders and dispenses, conditions, allergies, encounters, appointments, clinical documents and same-origin Binary content, service requests, diagnostic reports, and procedures.
+- Current ingestion: patient demographics, labs, vitals, medication orders and dispenses, conditions, allergies, encounters, longitudinal care plans, clinical documents and same-origin Binary content, service requests, diagnostic reports, and procedures.
 - `status` exposes each system, represented patient, recorded OAuth scopes or `unknown`, unattended-refresh capability, latest refresh result, and every expected dataset including `not_queried` ones.
 - Deterministic sync, parse, status, delta, timeline, citation, patient/caregiver report capture, and verification commands.
 - `verify` checks normalized evidence pointers plus citations to both imported clinical items and immutable local patient/caregiver reports.
@@ -46,7 +46,7 @@ These are workflow gaps, not reasons to build a larger platform first.
 
 1. **No real-patient baseline yet.** Production propagation and a first live connection still need to be exercised.
 2. **No setup/first-refresh skill.** The agent does not yet guide multi-system inventory, explain source coverage, interview the patient or caregiver, or confirm a skeptical baseline.
-3. **No deterministic next-appointment query.** Appointments are preserved and normalized, but the workflow still has to filter the timeline itself.
+3. **No next-appointment discovery.** Epic's Appointment API is non-USCDI and denied to the auto-distributed client, so the record cannot supply upcoming visits directly. Discovery must combine care-plan activity, the host runtime's calendar and email connectors, and user reports; no skill implements that yet.
 4. **No interactive reconciliation workflow.** Memory can represent and cite the three truths, but no skill yet conducts the skeptical interview or confirms an operational baseline with the user.
 5. **No proactive continuity loop.** There is no visit-preparation skill, post-visit refresh, or change reconciliation.
 6. **Multiple connections are low-level.** Named connections and honest per-system coverage exist, but users cannot yet refresh several systems as one coherent operation.
@@ -60,7 +60,7 @@ The next milestone is not “more FHIR.” It is one complete continuity loop ar
 
 1. **Ship the interactive first refresh.** Inventory providers and portals; connect one or more systems; show permissions and coverage; interview the patient or caregiver; and save a confirmed baseline with conflicts intact. Setup is explicit and never falls back to demo data.
 2. **Make refresh a multi-system user operation.** Add a clear `refresh` surface (keeping compatibility with `resync`), refresh all selected connections, summarize changes and failures per source, and verify the repository afterward.
-3. **Add a deterministic next-appointment query.** Use the ingested Appointment resources and document source-specific omissions rather than implying completeness.
+3. **Add next-appointment discovery.** Resolve the next visit from care-plan activity, the runtime's calendar and email connectors, and user reports; document source-specific omissions rather than implying completeness.
 4. **Build visit preparation.** Detect the next visit; identify the relevant clinician and prior encounter; compare interval changes; surface medication and plan conflicts, missing follow-up, and incomplete data; ask focused questions about lived reality; then emit a compact cited artifact in the active agent task.
 5. **Close the loop after the visit.** Refresh relevant systems, detect new notes, orders, results, referrals, and appointments, and ask the user to reconcile clinical intent with the plan that will actually be followed.
 6. **Offer runtime-native automation.** Let the skill offer recurring refresh and appointment-triggered preparation using the host agent's scheduler, permissions, task continuity, and notifications. Health OS owns the command and workflow recipe, not the scheduler.

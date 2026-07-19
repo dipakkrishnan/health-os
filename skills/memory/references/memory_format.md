@@ -6,7 +6,7 @@
 ├── timeline.md         # important recorded events; not a full dump
 ├── medications.md      # order, dispense, intent, and reported use kept separate
 ├── conditions.md       # recorded problem assertions with status
-├── appointments.md     # upcoming and recent recorded appointments
+├── appointments.md     # upcoming visits from care-plan, connectors, or reports
 ├── care-plan.md        # intent, lived reality, and operational next steps
 ├── conflicts.md        # unresolved disagreements and discriminating questions
 ├── coverage.md         # connected systems, permissions, query results, missing sources
@@ -84,9 +84,12 @@ evidence, not current clinician belief or patient experience.
 ### appointments.md
 
 List upcoming appointments first, then recent appointments relevant to active care.
-Include recorded status, time, participant/location when present, source connection,
-and preparation state if another workflow has established it. “No appointments
-returned” is a coverage statement, not proof that none exist.
+The record itself rarely exposes upcoming visits: they come from care-plan activity
+when an organization inlines them `[ci:…]`, from the runtime's calendar or email
+connectors, or from what the patient or caregiver reports `[report:…]`. State each
+entry's source; include status, time, participant/location when present, and
+preparation state if another workflow has established it. An empty list is a
+coverage statement, not proof that no visit exists.
 
 ### care-plan.md
 

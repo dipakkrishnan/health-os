@@ -30,7 +30,6 @@ DATASETS = (
     ("conditions", "Condition", {}),
     ("allergies", "AllergyIntolerance", {}),
     ("encounters", "Encounter", {}),
-    ("appointments", "Appointment", {}),
     # ponytail: assess-plan returns Epic's longitudinal plan too; add other
     # category variants only if a real org proves they carry distinct data
     ("care-plans", "CarePlan", {"category": "assess-plan"}),
@@ -466,27 +465,6 @@ def parse_resource(
             code=first_present(resource, base_pointer, "/type/0"),
             value=first_present(resource, base_pointer, "/class"),
             time=first_present(resource, base_pointer, "/period"),
-        )
-
-    elif resource_type == "Appointment":
-        concept = next(iter(resource.get("serviceType", [])), {}) or resource.get("appointmentType", {})
-        system, code, display = first_coding(concept)
-        display = resource.get("description") or display or "Appointment"
-        start, end = resource.get("start"), resource.get("end")
-        recorded = resource.get("created")
-        value = {
-            "appointmentType": resource.get("appointmentType"),
-            "serviceType": resource.get("serviceType", []),
-            "specialty": resource.get("specialty", []),
-            "reasonCode": resource.get("reasonCode", []),
-            "participant": resource.get("participant", []),
-            "supportingInformation": resource.get("supportingInformation", []),
-        }
-        kind = "appointment"
-        evidence.update(
-            code=first_present(resource, base_pointer, "/serviceType/0", "/appointmentType"),
-            value=first_present(resource, base_pointer, "/participant", "/reasonCode", "/description"),
-            time=first_present(resource, base_pointer, "/start", "/created"),
         )
 
     elif resource_type == "CarePlan":
@@ -943,13 +921,6 @@ def item_summary(kind: str, value: dict[str, Any]) -> str | None:
     if kind == "encounter":
         klass = value.get("class") or {}
         return klass.get("display") or klass.get("code")
-    if kind == "appointment":
-        participants = value.get("participant") or []
-        displays = [
-            (item.get("actor") or {}).get("display")
-            for item in participants if isinstance(item, dict)
-        ]
-        return ", ".join(display for display in displays if display) or None
     if kind == "care_plan":
         parts = [
             reference.get("display")

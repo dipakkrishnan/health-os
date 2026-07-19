@@ -118,17 +118,6 @@ RESPONSES = {
             },
         }
     ),
-    "/Appointment?": bundle(
-        {
-            "resourceType": "Appointment",
-            "id": "appointment-1",
-            "status": "booked",
-            "description": "Transplant follow-up",
-            "start": "2026-08-01T08:30:00Z",
-            "end": "2026-08-01T09:00:00Z",
-            "participant": [{"actor": {"display": "Transplant Clinic"}, "status": "accepted"}],
-        }
-    ),
     "/CarePlan?": bundle(
         {
             "resourceType": "CarePlan",
@@ -247,15 +236,15 @@ class CoreTest(unittest.TestCase):
 
             self.assertEqual(first["status"], "complete")
             self.assertEqual(second["status"], "complete")
-            self.assertEqual(sum(row["new_clinical_items"] for row in first["datasets"].values()), 14)
+            self.assertEqual(sum(row["new_clinical_items"] for row in first["datasets"].values()), 13)
             self.assertEqual(sum(row["new_clinical_items"] for row in second["datasets"].values()), 0)
             self.assertEqual(sum(row["new_clinical_items"] for row in third["datasets"].values()), 1)
 
             current = health_core.status(repo)
             self.assertEqual(current["sync_runs"], 3)
-            self.assertEqual(current["resource_versions"], 16)
-            self.assertEqual(current["clinical_items"], 15)
-            self.assertEqual(current["current_clinical_items"], 14)
+            self.assertEqual(current["resource_versions"], 15)
+            self.assertEqual(current["clinical_items"], 14)
+            self.assertEqual(current["current_clinical_items"], 13)
             self.assertEqual(current["connection_details"][0]["provider"], "Epic sandbox")
             self.assertEqual(
                 current["connection_details"][0]["authorization"]["scopes"],
@@ -279,7 +268,7 @@ class CoreTest(unittest.TestCase):
                 self.assertEqual({row["kind"] for row in rows}, {
                     "patient_profile", "lab_result", "vital_sign", "medication_order",
                     "medication_dispense", "condition_assertion", "allergy_assertion",
-                    "encounter", "appointment", "care_plan", "clinical_document", "service_request",
+                    "encounter", "care_plan", "clinical_document", "service_request",
                     "diagnostic_report", "procedure",
                 })
                 for row in rows:
@@ -293,7 +282,7 @@ class CoreTest(unittest.TestCase):
                 self.assertEqual(json.loads(current_lab["value_json"])["valueQuantity"]["value"], 1.50)
 
             entries = health_core.timeline(repo)
-            self.assertEqual(len(entries), 14)
+            self.assertEqual(len(entries), 13)
             dated = [e["when"]["start"] or e["when"]["recorded"] for e in entries if not e["when"]["date_unknown"]]
             self.assertEqual(dated, sorted(dated))
             lab = next(e for e in entries if e["kind"] == "lab_result")

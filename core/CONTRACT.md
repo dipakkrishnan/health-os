@@ -59,7 +59,7 @@ The parser supports the first-refresh evidence surface:
 - `Condition` -> `condition_assertion`;
 - `AllergyIntolerance` -> `allergy_assertion`;
 - `Encounter` -> `encounter`;
-- `Appointment` -> `appointment`;
+- `CarePlan` (assess-plan) -> `care_plan`, preserving goals, addressed problems, and any inline activity references;
 - `DocumentReference` -> `clinical_document`, with same-origin `Binary` content preserved;
 - `ServiceRequest` -> `service_request`;
 - `DiagnosticReport` -> `diagnostic_report`;

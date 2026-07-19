@@ -1,6 +1,6 @@
 ---
 name: chart
-description: Consult the user's health chart — answer questions about imported health records from the local core, oriented by persistent memory when it exists. Use for health history, lab trends, medication orders or fills, allergies, conditions, appointments, documents, procedures, changes over time, or source inspection. Cite every recorded fact to a clinical item and every mentioned patient/caregiver report to its report source.
+description: Consult the user's health chart — answer questions about imported health records from the local core, oriented by persistent memory when it exists. Use for health history, lab trends, medication orders or fills, allergies, conditions, care plans, documents, procedures, changes over time, or source inspection. Cite every recorded fact to a clinical item and every mentioned patient/caregiver report to its report source.
 ---
 
 # Chart
@@ -34,7 +34,7 @@ write to the health database.
    `empty` datasets.
    Completeness is never assumed — name gaps relevant to the question.
 7. Query with filters via `timeline --repo <repo>`; don't dump the whole record:
-   - `--kind patient_profile|lab_result|vital_sign|medication_order|medication_dispense|condition_assertion|allergy_assertion|encounter|appointment|clinical_document|service_request|diagnostic_report|procedure` (repeatable)
+   - `--kind patient_profile|lab_result|vital_sign|medication_order|medication_dispense|condition_assertion|allergy_assertion|encounter|care_plan|clinical_document|service_request|diagnostic_report|procedure` (repeatable)
    - `--query <text>` — substring on display name, or exact code (e.g. LOINC `2160-0`)
    - `--since` / `--until` — ISO date bounds
 8. Produce the view using `references/output_format.md`. Every factual line carries a
