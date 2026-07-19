@@ -31,6 +31,9 @@ DATASETS = (
     ("allergies", "AllergyIntolerance", {}),
     ("encounters", "Encounter", {}),
     ("appointments", "Appointment", {}),
+    # ponytail: assess-plan returns Epic's longitudinal plan too; add other
+    # category variants only if a real org proves they carry distinct data
+    ("care-plans", "CarePlan", {"category": "assess-plan"}),
     ("document-references", "DocumentReference", {}),
     ("service-requests", "ServiceRequest", {}),
     ("diagnostic-reports", "DiagnosticReport", {}),
@@ -486,6 +489,26 @@ def parse_resource(
             time=first_present(resource, base_pointer, "/start", "/created"),
         )
 
+    elif resource_type == "CarePlan":
+        system, code, display = first_coding(next(iter(resource.get("category", [])), {}))
+        display = resource.get("title") or display or "Care plan"
+        plan_period = resource.get("period", {})
+        start, end = plan_period.get("start"), plan_period.get("end")
+        recorded = resource.get("meta", {}).get("lastUpdated")
+        value = {
+            "intent": resource.get("intent"),
+            "category": resource.get("category", []),
+            "addresses": resource.get("addresses", []),
+            "goal": resource.get("goal", []),
+            "activity": resource.get("activity", []),
+        }
+        kind = "care_plan"
+        evidence.update(
+            code=first_present(resource, base_pointer, "/category/0"),
+            value=first_present(resource, base_pointer, "/activity", "/goal", "/addresses"),
+            time=first_present(resource, base_pointer, "/period", "/meta/lastUpdated"),
+        )
+
     elif resource_type == "DocumentReference":
         system, code, display = first_coding(resource.get("type"))
         display = resource.get("description") or display or "Clinical document"
@@ -927,6 +950,13 @@ def item_summary(kind: str, value: dict[str, Any]) -> str | None:
             for item in participants if isinstance(item, dict)
         ]
         return ", ".join(display for display in displays if display) or None
+    if kind == "care_plan":
+        parts = [
+            reference.get("display")
+            for key in ("addresses", "goal")
+            for reference in value.get(key, []) if isinstance(reference, dict)
+        ]
+        return "; ".join(part.strip() for part in parts if part) or None
     if kind == "clinical_document":
         return value.get("docStatus")
     if kind == "service_request":
