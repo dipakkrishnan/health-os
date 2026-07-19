@@ -316,8 +316,13 @@ class CoreTest(unittest.TestCase):
                 f"- Reports once-daily tacrolimus [report:{correction['id'][:12]}]\n"
                 "- bogus [ci:deadbeef0000]\n"
             )
+            artifacts = repo / "artifacts"
+            artifacts.mkdir()
+            (artifacts / "baseline-2026-07-19.md").write_text(
+                f"- Baseline creatinine [ci:{lab['id'][:12]}]\n"
+            )
             report = health_core.verify(repo)
-            self.assertEqual(report["memory_citations"]["checked"], 1)
+            self.assertEqual(report["memory_citations"]["checked"], 2)
             self.assertEqual(report["memory_citations"]["reports_checked"], 1)
             self.assertEqual(len(report["memory_citations"]["bad"]), 1)
             self.assertEqual(report["memory_citations"]["bad"][0]["citation"], "deadbeef0000")

@@ -34,6 +34,7 @@ Updated 2026-07-16
 
 - SQLite contract and schema with append-only resource versions, exact content-addressed FHIR response bytes, and per-run/page audit records.
 - Current ingestion: patient demographics, labs, vitals, medication orders and dispenses, conditions, allergies, encounters, longitudinal care plans, clinical documents and same-origin Binary content, service requests, diagnostic reports, and procedures.
+- The `document` command renders stored note/report/summary attachments (HTML, RTF, C-CDA XML) as plain text for reading and citation; `verify` checks citations in `memory/` and `artifacts/`.
 - `status` exposes each system, represented patient, recorded OAuth scopes or `unknown`, unattended-refresh capability, latest refresh result, and every expected dataset including `not_queried` ones.
 - Deterministic sync, parse, status, delta, timeline, citation, patient/caregiver report capture, and verification commands.
 - `verify` checks normalized evidence pointers plus citations to both imported clinical items and immutable local patient/caregiver reports.
@@ -45,7 +46,7 @@ Updated 2026-07-16
 These are workflow gaps, not reasons to build a larger platform first.
 
 1. **No real-patient baseline yet.** Production propagation and a first live connection still need to be exercised.
-2. **No setup/first-refresh skill.** The agent does not yet guide multi-system inventory, explain source coverage, interview the patient or caregiver, or confirm a skeptical baseline.
+2. **First-refresh skill is a draft.** `skills/refresh` guides setup, coverage explanation, the skeptical interview, and the cited baseline artifact; it has been exercised against sandbox persona runs but not a real patient or a real first-time user.
 3. **No next-appointment discovery.** Epic's Appointment API is non-USCDI and denied to the auto-distributed client, so the record cannot supply upcoming visits directly. Discovery must combine care-plan activity, the host runtime's calendar and email connectors, and user reports; no skill implements that yet.
 4. **No interactive reconciliation workflow.** Memory can represent and cite the three truths, but no skill yet conducts the skeptical interview or confirms an operational baseline with the user.
 5. **No proactive continuity loop.** There is no visit-preparation skill, post-visit refresh, or change reconciliation.

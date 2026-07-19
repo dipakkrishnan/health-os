@@ -30,9 +30,9 @@
     "websiteURL": "https://dipakkrishnan.github.io/health-os/",
     "privacyPolicyURL": "https://github.com/dipakkrishnan/health-os/blob/main/PRIVACY.md",
     "defaultPrompt": [
-      "What systems and data does my health record cover?",
-      "Show medication orders and fills without assuming use.",
-      "What is my next recorded appointment?"
+      "Connect my health records",
+      "Refresh my health records and tell me what changed",
+      "What systems and data does my health record cover?"
     ],
     "brandColor": "#2F6F5E"
   }

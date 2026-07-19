@@ -1270,7 +1270,11 @@ def verify(repo: Path) -> dict[str, Any]:
                     "file": f"sources/{report_id}.json",
                     "error": f"superseded report does not exist: {supersedes}",
                 })
-        for md_file in sorted(memory_dir.glob("*.md")):
+        artifacts_dir = repo / "artifacts"
+        cited_files = sorted(memory_dir.glob("*.md"))
+        if artifacts_dir.is_dir():
+            cited_files += sorted(artifacts_dir.glob("*.md"))
+        for md_file in cited_files:
             for prefix in re.findall(r"\[ci:([0-9a-fA-F]{6,64})\]", md_file.read_text()):
                 matches = [i for i in ids if i.startswith(prefix.lower())]
                 if len(matches) == 1:
