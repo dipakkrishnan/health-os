@@ -1,6 +1,6 @@
 ---
 name: chart
-description: Consult the user's health chart — answer any question about their health record from the local health core, oriented by the persistent memory when it exists. Use when the user asks about their health history, a lab trend, medication history, allergies, conditions, "what happened when", changes over time, or wants a timeline of results or encounters. Every statement of fact must cite a clinical item id.
+description: Consult the user's health chart — answer questions about imported health records from the local core, oriented by persistent memory when it exists. Use for health history, lab trends, medication orders or fills, allergies, conditions, care plans, documents, procedures, changes over time, or source inspection. Cite every recorded fact to a clinical item and every mentioned patient/caregiver report to its report source.
 ---
 
 # Chart
@@ -11,27 +11,35 @@ write to the health database.
 
 ## Start Here
 
-1. Resolve the core CLI: `${CLAUDE_PLUGIN_ROOT}/core/health_core.py` when running as
-   an installed plugin, else `core/health_core.py` from the project root.
+1. Resolve the plugin root without assuming a runtime: use `$PLUGIN_ROOT` when
+   available (Codex), then `$CLAUDE_PLUGIN_ROOT` (Claude), otherwise locate the
+   nearest parent of this skill or the working directory containing
+   `.codex-plugin/plugin.json` or `.claude-plugin/plugin.json`. Confirm
+   `<plugin-root>/core/health_core.py` exists; never guess a path.
 2. Resolve the data repo: `$HEALTH_OS_REPO` if set, else `~/health-data` if it
-   exists, else `spike/health-data` (sandbox) in the project.
-3. Before presenting anything, read `references/grounding_rules.md`.
-3a. If `<repo>/memory/` exists, read `memory/manifest.json` and the relevant memory
-   files first — they are the consolidated, cited understanding of the record; start
-   from them instead of re-deriving interpretation. If `synced_through_run` in the
+   exists. If neither exists, stop and help the user connect a health system.
+   Never silently use bundled or sandbox data.
+3. Before the first record access in a task, explain that selected local record
+   context will be processed by the active agent runtime and follow its configured
+   data policy. Do not read the record if the user declines.
+4. Before presenting anything, read `references/grounding_rules.md`.
+5. If `<repo>/memory/` exists, read `memory/manifest.json` and the relevant memory
+   files first — they are the consolidated, cited working context; start from them
+   without treating them as a replacement for evidence. If `synced_through_run` in the
    manifest differs from `latest_sync_run_id` in `status`, tell the user the memory
    is stale and suggest running the memory skill. Memory orients; specifics are
    still grounded through `timeline`/`cite` queries.
-4. Report coverage first: run `status --repo <repo>` and state which connections and
-   datasets the record covers, last sync times, and any `error`/`empty` datasets.
+6. Report coverage first: run `status --repo <repo>` and state which connections and
+   datasets the record covers, last sync times, and any `not_queried`, `error`, or
+   `empty` datasets.
    Completeness is never assumed — name gaps relevant to the question.
-5. Query with filters via `timeline --repo <repo>`; don't dump the whole record:
-   - `--kind lab_result|medication_order|condition_assertion|allergy_assertion|encounter` (repeatable)
+7. Query with filters via `timeline --repo <repo>`; don't dump the whole record:
+   - `--kind patient_profile|lab_result|vital_sign|medication_order|medication_dispense|condition_assertion|allergy_assertion|encounter|care_plan|clinical_document|service_request|diagnostic_report|procedure` (repeatable)
    - `--query <text>` — substring on display name, or exact code (e.g. LOINC `2160-0`)
    - `--since` / `--until` — ISO date bounds
-6. Produce the view using `references/output_format.md`. Every factual line carries a
+8. Produce the view using `references/output_format.md`. Every factual line carries a
    `[ci:<first 12 chars of item id>]` citation.
-7. When the user questions a fact, resolve the citation with
+9. When the user questions a fact, resolve the citation with
    `cite --repo <repo> <id-prefix>` — it returns the exact field pointers, values,
    and raw source bytes behind the item.
 
@@ -45,9 +53,9 @@ python3 core/health_core.py cite --repo ~/health-data c906417c572e
 
 ## Principles
 
-- Facts come from clinical items; anything you infer is interpretation and is
-  presented separately, clearly labeled.
-- Cite exact items, never paraphrase provenance. No uncited factual lines.
+- Recorded facts come from clinical items. Patient/caregiver reports come from
+  immutable report sources. Anything else inferred is labeled interpretation.
+- Cite exact items or reports; never blur provenance. No uncited factual lines.
 - Time is first-class: unknown dates stay unknown, never guessed or interpolated.
 - Gaps are findings. A silent period may be an uncaptured one — say which is likely
   given known coverage.

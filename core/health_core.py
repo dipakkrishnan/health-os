@@ -24,10 +24,19 @@ SCHEMA = Path(__file__).with_name("schema.sql")
 DATASETS = (
     ("patient", "Patient", None),
     ("observation-labs", "Observation", {"category": "laboratory"}),
+    ("observation-vitals", "Observation", {"category": "vital-signs"}),
     ("medication-requests", "MedicationRequest", {}),
+    ("medication-dispenses", "MedicationDispense", {}),
     ("conditions", "Condition", {}),
     ("allergies", "AllergyIntolerance", {}),
     ("encounters", "Encounter", {}),
+    # ponytail: assess-plan returns Epic's longitudinal plan too; add other
+    # category variants only if a real org proves they carry distinct data
+    ("care-plans", "CarePlan", {"category": "assess-plan"}),
+    ("document-references", "DocumentReference", {}),
+    ("service-requests", "ServiceRequest", {}),
+    ("diagnostic-reports", "DiagnosticReport", {}),
+    ("procedures", "Procedure", {}),
 )
 
 
@@ -55,10 +64,23 @@ def connect(repo: Path) -> sqlite3.Connection:
     db = sqlite3.connect(database_path(repo))
     db.row_factory = sqlite3.Row
     db.execute("PRAGMA foreign_keys = ON")
+    if db.execute(
+        "SELECT 1 FROM sqlite_master WHERE type='table' AND name='metadata'"
+    ).fetchone():
+        migrate_schema(db)
+        db.commit()
     return db
 
 
 def migrate_schema(db: sqlite3.Connection) -> None:
+    connection_columns = {row[1] for row in db.execute("PRAGMA table_info(connections)")}
+    for name, declaration in (
+        ("authorization_scopes_json", "TEXT NOT NULL DEFAULT '[]'"),
+        ("fhir_user", "TEXT"),
+        ("authorized_at", "TEXT"),
+    ):
+        if name not in connection_columns:
+            db.execute(f"ALTER TABLE connections ADD COLUMN {name} {declaration}")
     columns = {row[1] for row in db.execute("PRAGMA table_info(resources)")}
     if "is_current" not in columns:
         db.execute(
@@ -85,7 +107,7 @@ def migrate_schema(db: sqlite3.Connection) -> None:
         WHERE r.is_current=1
         """
     )
-    db.execute("UPDATE metadata SET value='2' WHERE key='schema_version'")
+    db.execute("UPDATE metadata SET value='3' WHERE key='schema_version'")
 
 
 def initialize(
@@ -95,6 +117,8 @@ def initialize(
     fhir_base: str,
     patient_id: str,
     token_endpoint: str | None = None,
+    authorization_scopes: list[str] | None = None,
+    fhir_user: str | None = None,
 ) -> None:
     repo.mkdir(parents=True, exist_ok=True)
     (repo / "raw").mkdir(exist_ok=True)
@@ -106,13 +130,17 @@ def initialize(
             """
             INSERT INTO connections (
                 connection_id, provider, fhir_base, patient_id, token_endpoint,
+                authorization_scopes_json, fhir_user, authorized_at,
                 created_at, updated_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(connection_id) DO UPDATE SET
                 provider=excluded.provider,
                 fhir_base=excluded.fhir_base,
                 patient_id=excluded.patient_id,
                 token_endpoint=COALESCE(excluded.token_endpoint, connections.token_endpoint),
+                authorization_scopes_json=excluded.authorization_scopes_json,
+                fhir_user=COALESCE(excluded.fhir_user, connections.fhir_user),
+                authorized_at=excluded.authorized_at,
                 updated_at=excluded.updated_at
             """,
             (
@@ -121,6 +149,9 @@ def initialize(
                 fhir_base.rstrip("/"),
                 patient_id,
                 token_endpoint,
+                canonical_json(sorted(authorization_scopes or [])),
+                fhir_user,
+                now,
                 now,
                 now,
             ),
@@ -243,7 +274,7 @@ def first_coding(concept: Any) -> tuple[str | None, str | None, str | None]:
 
 
 def period(resource: dict[str, Any], prefix: str) -> tuple[str | None, str | None]:
-    date_time = resource.get(f"{prefix}DateTime")
+    date_time = resource.get(f"{prefix}DateTime") or resource.get(f"{prefix}Instant")
     if date_time:
         return str(date_time), None
     value_period = resource.get(f"{prefix}Period")
@@ -294,14 +325,40 @@ def parse_resource(
     status = resource.get("status")
     evidence = {"resource": base_pointer or ""}
 
-    if resource_type == "Observation":
+    if resource_type == "Patient":
+        names = resource.get("name") or []
+        name = names[0] if names and isinstance(names[0], dict) else {}
+        display = name.get("text") or " ".join(
+            [*name.get("given", []), name.get("family", "")]
+        ).strip() or "Patient"
+        system, code = None, None
+        start, end = resource.get("birthDate"), None
+        recorded = resource.get("meta", {}).get("lastUpdated")
+        value = {
+            "name": names,
+            "birthDate": resource.get("birthDate"),
+            "gender": resource.get("gender"),
+            "deceasedBoolean": resource.get("deceasedBoolean"),
+            "deceasedDateTime": resource.get("deceasedDateTime"),
+        }
+        kind = "patient_profile"
+        evidence.update(
+            value=first_present(resource, base_pointer, "/name", "/birthDate", "/gender"),
+            time=first_present(resource, base_pointer, "/meta/lastUpdated", "/birthDate"),
+        )
+
+    elif resource_type == "Observation":
         categories = {
             coding.get("code")
             for category in resource.get("category", [])
             for coding in category.get("coding", [])
             if isinstance(coding, dict)
         }
-        if "laboratory" not in categories:
+        if "laboratory" in categories:
+            kind = "lab_result"
+        elif "vital-signs" in categories:
+            kind = "vital_sign"
+        else:
             return None
         system, code, display = first_coding(resource.get("code"))
         start, end = period(resource, "effective")
@@ -310,7 +367,7 @@ def parse_resource(
             for key in resource
             if key.startswith("value") or key in ("interpretation", "referenceRange")
         }
-        kind, recorded = "lab_result", resource.get("issued")
+        recorded = resource.get("issued")
         evidence.update(
             code=first_present(resource, base_pointer, "/code"),
             value=first_present(resource, base_pointer, "/valueQuantity", "/valueCodeableConcept", "/valueString", "/valueBoolean", "/valueInteger", "/valueRatio", "/component"),
@@ -334,6 +391,28 @@ def parse_resource(
             code=first_present(resource, base_pointer, "/medicationCodeableConcept", "/medicationReference"),
             value=first_present(resource, base_pointer, "/dosageInstruction"),
             time=first_present(resource, base_pointer, "/authoredOn"),
+        )
+
+    elif resource_type == "MedicationDispense":
+        medication = resource.get("medicationCodeableConcept")
+        system, code, display = first_coding(medication)
+        if not display and resource.get("medicationReference"):
+            display = resource["medicationReference"].get("display") or resource["medicationReference"].get("reference")
+        start = resource.get("whenHandedOver") or resource.get("whenPrepared")
+        end = None
+        recorded = resource.get("whenPrepared")
+        value = {
+            "dosageInstruction": resource.get("dosageInstruction", []),
+            "quantity": resource.get("quantity"),
+            "daysSupply": resource.get("daysSupply"),
+            "authorizingPrescription": resource.get("authorizingPrescription", []),
+            "whenHandedOver": resource.get("whenHandedOver"),
+        }
+        kind = "medication_dispense"
+        evidence.update(
+            code=first_present(resource, base_pointer, "/medicationCodeableConcept", "/medicationReference"),
+            value=first_present(resource, base_pointer, "/dosageInstruction", "/quantity", "/daysSupply"),
+            time=first_present(resource, base_pointer, "/whenHandedOver", "/whenPrepared"),
         )
 
     elif resource_type == "Condition":
@@ -386,6 +465,100 @@ def parse_resource(
             code=first_present(resource, base_pointer, "/type/0"),
             value=first_present(resource, base_pointer, "/class"),
             time=first_present(resource, base_pointer, "/period"),
+        )
+
+    elif resource_type == "CarePlan":
+        system, code, display = first_coding(next(iter(resource.get("category", [])), {}))
+        display = resource.get("title") or display or "Care plan"
+        plan_period = resource.get("period", {})
+        start, end = plan_period.get("start"), plan_period.get("end")
+        recorded = resource.get("meta", {}).get("lastUpdated")
+        value = {
+            "intent": resource.get("intent"),
+            "category": resource.get("category", []),
+            "addresses": resource.get("addresses", []),
+            "goal": resource.get("goal", []),
+            "activity": resource.get("activity", []),
+        }
+        kind = "care_plan"
+        evidence.update(
+            code=first_present(resource, base_pointer, "/category/0"),
+            value=first_present(resource, base_pointer, "/activity", "/goal", "/addresses"),
+            time=first_present(resource, base_pointer, "/period", "/meta/lastUpdated"),
+        )
+
+    elif resource_type == "DocumentReference":
+        system, code, display = first_coding(resource.get("type"))
+        display = resource.get("description") or display or "Clinical document"
+        start, end = resource.get("date"), None
+        recorded = resource.get("date")
+        value = {
+            "docStatus": resource.get("docStatus"),
+            "category": resource.get("category", []),
+            "author": resource.get("author", []),
+            "custodian": resource.get("custodian"),
+            "content": resource.get("content", []),
+            "context": resource.get("context"),
+        }
+        kind = "clinical_document"
+        evidence.update(
+            code=first_present(resource, base_pointer, "/type", "/category/0"),
+            value=first_present(resource, base_pointer, "/content", "/description"),
+            time=first_present(resource, base_pointer, "/date"),
+        )
+
+    elif resource_type == "ServiceRequest":
+        system, code, display = first_coding(resource.get("code"))
+        start, end = period(resource, "occurrence")
+        recorded = resource.get("authoredOn")
+        value = {
+            "intent": resource.get("intent"),
+            "category": resource.get("category", []),
+            "requester": resource.get("requester"),
+            "reasonCode": resource.get("reasonCode", []),
+            "reasonReference": resource.get("reasonReference", []),
+        }
+        kind = "service_request"
+        evidence.update(
+            code=first_present(resource, base_pointer, "/code"),
+            value=first_present(resource, base_pointer, "/requester", "/reasonCode", "/category"),
+            time=first_present(resource, base_pointer, "/occurrenceDateTime", "/occurrencePeriod", "/authoredOn"),
+        )
+
+    elif resource_type == "DiagnosticReport":
+        system, code, display = first_coding(resource.get("code"))
+        start, end = period(resource, "effective")
+        recorded = resource.get("issued")
+        value = {
+            "category": resource.get("category", []),
+            "conclusion": resource.get("conclusion"),
+            "conclusionCode": resource.get("conclusionCode", []),
+            "result": resource.get("result", []),
+            "presentedForm": resource.get("presentedForm", []),
+        }
+        kind = "diagnostic_report"
+        evidence.update(
+            code=first_present(resource, base_pointer, "/code"),
+            value=first_present(resource, base_pointer, "/conclusion", "/result", "/presentedForm"),
+            time=first_present(resource, base_pointer, "/effectiveDateTime", "/effectivePeriod", "/issued"),
+        )
+
+    elif resource_type == "Procedure":
+        system, code, display = first_coding(resource.get("code"))
+        start, end = period(resource, "performed")
+        recorded = resource.get("meta", {}).get("lastUpdated")
+        value = {
+            "category": resource.get("category"),
+            "reasonCode": resource.get("reasonCode", []),
+            "reasonReference": resource.get("reasonReference", []),
+            "outcome": resource.get("outcome"),
+            "performer": resource.get("performer", []),
+        }
+        kind = "procedure"
+        evidence.update(
+            code=first_present(resource, base_pointer, "/code"),
+            value=first_present(resource, base_pointer, "/outcome", "/performer", "/reasonCode"),
+            time=first_present(resource, base_pointer, "/performedDateTime", "/performedPeriod", "/meta/lastUpdated"),
         )
 
     else:
@@ -463,6 +636,21 @@ def dataset_url(fhir_base: str, patient_id: str, resource_type: str, parameters:
     return f"{fhir_base}/{resource_type}?{query}"
 
 
+def document_binary_urls(resource: dict[str, Any], fhir_base: str) -> list[str]:
+    """Return same-origin Binary links; never send a bearer token to another host."""
+    base = urllib.parse.urlparse(fhir_base)
+    urls = []
+    for content in resource.get("content", []):
+        url = (content.get("attachment") or {}).get("url") if isinstance(content, dict) else None
+        if not url:
+            continue
+        absolute = urllib.parse.urljoin(f"{fhir_base.rstrip('/')}/", url)
+        parsed = urllib.parse.urlparse(absolute)
+        if parsed.scheme == base.scheme and parsed.netloc == base.netloc and "/Binary/" in parsed.path:
+            urls.append(absolute)
+    return urls
+
+
 def update_coverage(
     db: sqlite3.Connection,
     connection_id: str,
@@ -495,6 +683,7 @@ def sync(repo: Path, connection_id: str, token: str) -> dict[str, Any]:
     run_id = str(uuid.uuid4())
     started = utcnow()
     failures = []
+    binary_urls: set[str] = set()
     summary: dict[str, Any] = {"sync_run_id": run_id, "datasets": {}}
     with connect(repo) as db:
         connection = db.execute(
@@ -541,6 +730,8 @@ def sync(repo: Path, connection_id: str, token: str) -> dict[str, Any]:
                 target = [row for row in stored if row[1].get("resourceType") == resource_type]
                 resource_count += len(target)
                 for version_key, resource, resource_pointer in target:
+                    if resource_type == "DocumentReference":
+                        binary_urls.update(document_binary_urls(resource, connection["fhir_base"]))
                     if store_clinical_item(
                         db,
                         connection_id,
@@ -577,6 +768,42 @@ def sync(repo: Path, connection_id: str, token: str) -> dict[str, Any]:
                 "new_clinical_items": new_item_count,
                 "pages": page_number,
             }
+
+        binary_count = 0
+        binary_error = None
+        for page_number, url in enumerate(sorted(binary_urls), 1):
+            retrieved = utcnow()
+            status_code, media_type, body = http_get(url, token)
+            blob_sha = store_blob(db, repo, body, media_type, retrieved)
+            db.execute(
+                """
+                INSERT INTO sync_pages (
+                    sync_run_id, dataset, page_number, request_url,
+                    retrieved_at, http_status, blob_sha256
+                ) VALUES (?, 'document-binaries', ?, ?, ?, ?, ?)
+                """,
+                (run_id, page_number, url, retrieved, status_code, blob_sha),
+            )
+            if not 200 <= status_code < 300:
+                binary_error = f"HTTP {status_code}; response blob {blob_sha}"
+                failures.append(f"document-binaries: {binary_error}")
+                continue
+            binary_count += 1
+            try:
+                store_resources(db, connection_id, run_id, blob_sha, body, retrieved)
+            except (json.JSONDecodeError, TypeError, KeyError):
+                pass  # Exact non-JSON attachment bytes are already preserved in raw_blobs.
+        binary_status = "error" if binary_error else ("success" if binary_count else "empty")
+        update_coverage(
+            db, connection_id, "document-binaries", "Binary", binary_status,
+            binary_count, utcnow(), binary_error,
+        )
+        summary["datasets"]["document-binaries"] = {
+            "status": binary_status,
+            "resources": binary_count,
+            "new_clinical_items": 0,
+            "pages": len(binary_urls),
+        }
 
         completed = utcnow()
         final_status = "partial" if failures else "complete"
@@ -615,26 +842,71 @@ def status(repo: Path) -> dict[str, Any]:
         latest = db.execute(
             "SELECT sync_run_id FROM sync_runs WHERE completed_at IS NOT NULL ORDER BY rowid DESC LIMIT 1"
         ).fetchone()
+        stored_coverage = [dict(row) for row in db.execute(
+            "SELECT * FROM coverage ORDER BY connection_id, dataset"
+        )]
+        connections = []
+        for row in db.execute("SELECT * FROM connections ORDER BY connection_id"):
+            latest_run = db.execute(
+                """
+                SELECT sync_run_id, started_at, completed_at, status, error
+                FROM sync_runs WHERE connection_id=? ORDER BY rowid DESC LIMIT 1
+                """,
+                (row["connection_id"],),
+            ).fetchone()
+            connection_coverage = {
+                item["dataset"]: item for item in stored_coverage
+                if item["connection_id"] == row["connection_id"]
+            }
+            for dataset, resource_type, _ in (*DATASETS, ("document-binaries", "Binary", {})):
+                connection_coverage.setdefault(dataset, {
+                    "connection_id": row["connection_id"],
+                    "dataset": dataset,
+                    "resource_type": resource_type,
+                    "status": "not_queried",
+                    "item_count": 0,
+                    "last_attempt_at": None,
+                    "last_success_at": None,
+                    "error": None,
+                })
+            connections.append({
+                "connection_id": row["connection_id"],
+                "provider": row["provider"],
+                "fhir_base": row["fhir_base"],
+                "patient_id": row["patient_id"],
+                "authorization": {
+                    "access": "read-only patient access",
+                    "scopes": json.loads(row["authorization_scopes_json"] or "[]"),
+                    "scope_status": "recorded" if row["authorized_at"] else "unknown",
+                    "fhir_user": row["fhir_user"],
+                    "authorized_at": row["authorized_at"],
+                    "unattended_refresh": bool(row["dynamic_client_id"] and row["credential_ref"]),
+                },
+                "latest_refresh": dict(latest_run) if latest_run else None,
+                "coverage": sorted(connection_coverage.values(), key=lambda item: item["dataset"]),
+            })
+        coverage = [item for connection in connections for item in connection["coverage"]]
         return {
             "schema_version": db.execute("SELECT value FROM metadata WHERE key='schema_version'").fetchone()[0],
             "latest_sync_run_id": latest["sync_run_id"] if latest else None,
-            "connections": db.execute("SELECT COUNT(*) FROM connections").fetchone()[0],
+            "connections": len(connections),
+            "connection_details": connections,
             "sync_runs": db.execute("SELECT COUNT(*) FROM sync_runs").fetchone()[0],
             "raw_blobs": db.execute("SELECT COUNT(*) FROM raw_blobs").fetchone()[0],
             "resource_versions": db.execute("SELECT COUNT(*) FROM resources").fetchone()[0],
             "clinical_items": db.execute("SELECT COUNT(*) FROM clinical_items").fetchone()[0],
             "current_clinical_items": db.execute("SELECT COUNT(*) FROM current_clinical_items").fetchone()[0],
-            "coverage": [dict(row) for row in db.execute("SELECT * FROM coverage ORDER BY connection_id, dataset")],
+            "coverage": coverage,
         }
 
 
 def item_summary(kind: str, value: dict[str, Any]) -> str | None:
-    if kind == "lab_result":
+    if kind in ("lab_result", "vital_sign"):
         quantity = value.get("valueQuantity")
         if isinstance(quantity, dict):
             return f"{quantity.get('value')} {quantity.get('unit', '')}".strip()
         return value.get("valueString")
-    if kind == "medication_order":
+    if kind in ("medication_order", "medication_dispense"):
         dosages = value.get("dosageInstruction") or []
         return dosages[0].get("text") if dosages and isinstance(dosages[0], dict) else None
     if kind in ("condition_assertion", "allergy_assertion"):
@@ -649,6 +921,24 @@ def item_summary(kind: str, value: dict[str, Any]) -> str | None:
     if kind == "encounter":
         klass = value.get("class") or {}
         return klass.get("display") or klass.get("code")
+    if kind == "care_plan":
+        parts = [
+            reference.get("display")
+            for key in ("addresses", "goal")
+            for reference in value.get(key, []) if isinstance(reference, dict)
+        ]
+        return "; ".join(part.strip() for part in parts if part) or None
+    if kind == "clinical_document":
+        return value.get("docStatus")
+    if kind == "service_request":
+        return value.get("intent")
+    if kind == "diagnostic_report":
+        return value.get("conclusion")
+    if kind == "procedure":
+        outcome = value.get("outcome") or {}
+        return outcome.get("text")
+    if kind == "patient_profile":
+        return value.get("birthDate")
     return None
 
 
@@ -760,9 +1050,44 @@ def cite(repo: Path, item_id_prefix: str) -> dict[str, Any]:
     }
 
 
+def record_report(
+    repo: Path,
+    reporter_role: str,
+    statement: str,
+    subject: str | None = None,
+    supersedes: str | None = None,
+) -> dict[str, Any]:
+    """Preserve an explicit patient/caregiver statement as a local source."""
+    if not database_path(repo).is_file():
+        raise SystemExit(f"No health repository at {repo}")
+    if not reporter_role.strip() or not statement.strip():
+        raise SystemExit("Reporter role and statement must not be empty")
+    sources = repo / "memory" / "sources"
+    sources.mkdir(parents=True, exist_ok=True)
+    if supersedes:
+        if not re.fullmatch(r"[0-9a-fA-F]{6,32}", supersedes):
+            raise SystemExit("Superseded report id must be a 6-32 character hex prefix")
+        matches = list(sources.glob(f"{supersedes}*.json"))
+        if len(matches) != 1:
+            raise SystemExit(f"Superseded report prefix must resolve once; found {len(matches)}")
+        supersedes = matches[0].stem
+    report = {
+        "id": uuid.uuid4().hex,
+        "recorded_at": utcnow(),
+        "reporter_role": reporter_role.strip(),
+        "subject": subject.strip() if subject else None,
+        "statement": statement.strip(),
+        "supersedes": supersedes,
+    }
+    destination = sources / f"{report['id']}.json"
+    temporary = destination.with_suffix(".tmp")
+    temporary.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n")
+    os.replace(temporary, destination)
+    return report
+
+
 def verify(repo: Path) -> dict[str, Any]:
-    """Grounding check: every evidence pointer on every current clinical item
-    must resolve against the stored raw response bytes."""
+    """Verify clinical evidence pointers and durable-memory citations."""
     resolved, dangling = 0, []
     with connect(repo) as db:
         rows = db.execute(
@@ -783,11 +1108,39 @@ def verify(repo: Path) -> dict[str, Any]:
                     {"clinical_item_id": row["clinical_item_id"], "kind": row["kind"],
                      "display": row["display"], "field": field, "pointer": ptr}
                 )
-    memory_citations: dict[str, Any] = {"checked": 0, "bad": []}
+    memory_citations: dict[str, Any] = {"checked": 0, "reports_checked": 0, "bad": []}
     memory_dir = repo / "memory"
     if memory_dir.is_dir():
         with connect(repo) as db:
             ids = [r[0] for r in db.execute("SELECT clinical_item_id FROM current_clinical_items")]
+        reports: dict[str, dict[str, Any]] = {}
+        for source in sorted((memory_dir / "sources").glob("*.json")):
+            try:
+                payload = json.loads(source.read_text())
+            except (OSError, json.JSONDecodeError) as error:
+                memory_citations["bad"].append({"file": str(source.relative_to(memory_dir)), "error": str(error)})
+                continue
+            required = ("id", "recorded_at", "reporter_role", "statement")
+            if not isinstance(payload, dict) or any(not payload.get(field) for field in required):
+                memory_citations["bad"].append({
+                    "file": str(source.relative_to(memory_dir)),
+                    "error": f"report source requires {', '.join(required)}",
+                })
+                continue
+            if payload["id"] != source.stem:
+                memory_citations["bad"].append({
+                    "file": str(source.relative_to(memory_dir)),
+                    "error": "report id must match filename",
+                })
+                continue
+            reports[payload["id"]] = payload
+        for report_id, payload in reports.items():
+            supersedes = payload.get("supersedes")
+            if supersedes and supersedes not in reports:
+                memory_citations["bad"].append({
+                    "file": f"sources/{report_id}.json",
+                    "error": f"superseded report does not exist: {supersedes}",
+                })
         for md_file in sorted(memory_dir.glob("*.md")):
             for prefix in re.findall(r"\[ci:([0-9a-fA-F]{6,64})\]", md_file.read_text()):
                 matches = [i for i in ids if i.startswith(prefix.lower())]
@@ -796,6 +1149,14 @@ def verify(repo: Path) -> dict[str, Any]:
                 else:
                     memory_citations["bad"].append(
                         {"file": md_file.name, "citation": prefix, "matches": len(matches)}
+                    )
+            for prefix in re.findall(r"\[report:([0-9a-fA-F]{6,64})\]", md_file.read_text()):
+                matches = [report_id for report_id in reports if report_id.startswith(prefix.lower())]
+                if len(matches) == 1:
+                    memory_citations["reports_checked"] += 1
+                else:
+                    memory_citations["bad"].append(
+                        {"file": md_file.name, "report": prefix, "matches": len(matches)}
                     )
     return {
         "items": len(rows),
@@ -816,6 +1177,8 @@ def main() -> None:
     init_parser.add_argument("--fhir-base", required=True)
     init_parser.add_argument("--patient-id", required=True)
     init_parser.add_argument("--token-endpoint")
+    init_parser.add_argument("--scope", action="append", default=[])
+    init_parser.add_argument("--fhir-user")
 
     sync_parser = subparsers.add_parser("sync")
     sync_parser.add_argument("--repo", type=Path, required=True)
@@ -847,9 +1210,19 @@ def main() -> None:
     delta_parser.add_argument("--repo", type=Path, required=True)
     delta_parser.add_argument("--after", required=True, help="Sync run id the memory is current through")
 
+    report_parser = subparsers.add_parser("record-report")
+    report_parser.add_argument("--repo", type=Path, required=True)
+    report_parser.add_argument("--reporter-role", required=True)
+    report_parser.add_argument("--statement", required=True)
+    report_parser.add_argument("--subject")
+    report_parser.add_argument("--supersedes", help="Prior report id prefix corrected by this report")
+
     args = parser.parse_args()
     if args.command == "init":
-        initialize(args.repo, args.connection, args.provider, args.fhir_base, args.patient_id, args.token_endpoint)
+        initialize(
+            args.repo, args.connection, args.provider, args.fhir_base, args.patient_id,
+            args.token_endpoint, args.scope, args.fhir_user,
+        )
         print(json.dumps(status(args.repo), indent=2))
     elif args.command == "sync":
         token = os.environ.get(args.token_env)
@@ -871,6 +1244,10 @@ def main() -> None:
         print(json.dumps(timeline(args.repo, args.kind, args.query, args.since, args.until), indent=2))
     elif args.command == "cite":
         print(json.dumps(cite(args.repo, args.item_id), indent=2))
+    elif args.command == "record-report":
+        print(json.dumps(record_report(
+            args.repo, args.reporter_role, args.statement, args.subject, args.supersedes,
+        ), indent=2))
 
 
 if __name__ == "__main__":

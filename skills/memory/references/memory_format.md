@@ -1,53 +1,133 @@
 # Memory format
 
-```
+```text
 <repo>/memory/
-├── manifest.json      # watermark + bookkeeping
-├── timeline.md        # the chronological narrative of the record
-├── medications.md     # consolidated medication courses
-├── conditions.md      # problem list with statuses
-└── gaps.md            # known coverage limits and open questions
+├── manifest.json       # refresh watermark and memory version
+├── timeline.md         # important recorded events; not a full dump
+├── medications.md      # order, dispense, intent, and reported use kept separate
+├── conditions.md       # recorded problem assertions with status
+├── appointments.md     # upcoming visits from care-plan, connectors, or reports
+├── care-plan.md        # intent, lived reality, and operational next steps
+├── conflicts.md        # unresolved disagreements and discriminating questions
+├── coverage.md         # connected systems, permissions, query results, missing sources
+└── sources/            # immutable patient/caregiver report JSON files
 ```
 
-## manifest.json
+## Manifest
 
 ```json
 {
-  "synced_through_run": "<sync_run_id the memory is current through>",
+  "synced_through_run": "<latest completed sync run id>",
   "updated_at": "<ISO timestamp>",
-  "memory_version": 1
+  "memory_version": 2
 }
 ```
 
-`synced_through_run` is the watermark: `delta --after <it>` yields exactly the items
-the next update must process. Set it from `delta.latest_run` (update) or
-`status.latest_sync_run_id` (bootstrap) — never invent it.
+The watermark advances after all new items are incorporated and citations verify.
 
-## File conventions
+## Source and citation rules
 
-- Every factual line ends with one or more `[ci:<first 12 chars>]` citations.
-- `timeline.md`: entries grouped by year; one line per event; an `## Undated`
-  section for items with unknown time; optional `## Interpretation (not in record)`.
-- `medications.md`: one entry per medication *course* — consolidate repeated or
-  renewed orders into a single entry citing each order. State explicitly that
-  entries are orders, with actual use unknown unless patient-reported.
-- `conditions.md`: one entry per problem, not per assertion — the same diagnosis
-  recorded across five encounters is one line with five citations. Keep
-  clinicalStatus/verificationStatus. Placeholder entries ("Not on File") are
-  reported in prose as absences ("no allergies documented"), citing the placeholder
-  item.
-- `gaps.md`: datasets never synced, date ranges before each connection's history,
-  known providers not yet connected, and questions the record raises but cannot
-  answer. Sourced from `status` coverage plus what assembly noticed.
-- Each file may keep a short `## History` section at the bottom: superseded lines
-  moved there with the date and the citation of what replaced them.
+- Imported record claims end in one or more `[ci:<12-char id>]` citations.
+- Patient and caregiver claims end in `[report:<12-char id>]` and state the reporter
+  role and report date in prose.
+- Clinical intent cites the note, order, or message that expresses it. If intent is
+  reconstructed, label it “Interpretation” and cite the contributing items.
+- Agent interpretation never receives a source citation that implies it was stated.
+- One line may include different truth categories only when each is visibly labeled.
+
+`memory/sources/<id>.json` is append-only and has this shape:
+
+```json
+{
+  "id": "<32 lowercase hex characters; matches filename>",
+  "recorded_at": "<ISO timestamp>",
+  "reporter_role": "patient or caregiver role",
+  "subject": "<person concerned, optional>",
+  "statement": "<explicit statement>",
+  "supersedes": "<full prior report id, optional>"
+}
+```
+
+Create sources only through `health_core.py record-report`. A correction appends a
+new source with `supersedes`; it never edits the earlier statement.
+
+## View conventions
+
+### timeline.md
+
+Keep a selective chronology of clinically or operationally meaningful recorded
+events. Group dated entries by year and keep unknown dates under `## Undated`.
+Timeline entries describe recorded evidence; perspectives belong in other views.
+
+### medications.md
+
+Use one section per medication concept when identity is reasonably clear:
+
+```text
+### Tacrolimus
+- Recorded orders: ... [ci:...]
+- Recorded dispenses: ... [ci:...]
+- Clinical intent: ... [ci:...] or Unknown
+- Lived use: caregiver reports ... [report:...] or Unknown
+- Reconciliation: Aligned | Conflicting | Unknown
+```
+
+Do not merge medications solely because their display strings are similar. Preserve
+dose, route, timing, status, and source-system disagreements.
+
+### conditions.md
+
+Consolidate repeated assertions only when code, meaning, and status are compatible.
+Preserve clinical and verification status. A diagnosis code establishes recorded
+evidence, not current clinician belief or patient experience.
+
+### appointments.md
+
+List upcoming appointments first, then recent appointments relevant to active care.
+The record itself rarely exposes upcoming visits: they come from care-plan activity
+when an organization inlines them `[ci:…]`, from the runtime's calendar or email
+connectors, or from what the patient or caregiver reports `[report:…]`. State each
+entry's source; include status, time, participant/location when present, and
+preparation state if another workflow has established it. An empty list is a
+coverage statement, not proof that no visit exists.
+
+### care-plan.md
+
+Use one block per active concern or goal:
+
+```text
+### <concern or goal>
+- Recorded evidence: ... [ci:...]
+- Clinical intent: <who intends what> [ci:...] | Unknown
+- Lived reality: <what actually happens> [report:...] | Unknown
+- Next step: <action, owner, due time> | Unresolved
+```
+
+Do not promote a proposed order into an agreed operational next step.
+
+### conflicts.md
+
+Each conflict contains:
+
+1. The competing statements, separately attributed and cited.
+2. Why the difference matters operationally.
+3. Relevant missing source coverage.
+4. The smallest question or evidence that could resolve it.
+5. Status: `unresolved`, `confirmed`, or `superseded`, with date.
+
+Keep confirmed conflicts as short history rather than deleting them.
+
+### coverage.md
+
+Summarize `status.connection_details`: system, represented patient, recorded scopes
+or `unknown`, latest refresh status, and every dataset status. Also list providers or
+portals the patient/caregiver says exist but that are not connected. “Success” means
+the source answered the query; it does not establish historical completeness.
 
 ## Consolidation rules
 
-- Merge, cite everything: a consolidated line carries the citations of all items it
-  summarizes.
-- Never average, interpolate, or round values into new numbers the record does not
-  contain.
-- When two items conflict (same fact, different values/status), the memory line
-  states the conflict and cites both — resolution belongs to review skills, not to
-  memory.
+- Consolidate duplicate evidence; never collapse competing perspectives.
+- Never average, interpolate, or round values into facts absent from a source.
+- A delta can invalidate a view without invalidating an immutable source.
+- Move superseded derived summaries to short history only when doing so aids audit.
+- Keep views compact enough to orient an agent before it opens underlying evidence.

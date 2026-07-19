@@ -15,6 +15,9 @@ CREATE TABLE IF NOT EXISTS connections (
     token_endpoint TEXT,
     dynamic_client_id TEXT,
     credential_ref TEXT,
+    authorization_scopes_json TEXT NOT NULL DEFAULT '[]',
+    fhir_user TEXT,
+    authorized_at TEXT,
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
 );

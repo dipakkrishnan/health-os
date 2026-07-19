@@ -31,7 +31,7 @@ RESPONSES = {
         "id": PATIENT_ID,
         "name": [{"text": "Sandbox Patient"}],
     },
-    "/Observation?": bundle(
+    "category=laboratory": bundle(
         {
             "resourceType": "Observation",
             "id": "lab-1",
@@ -51,6 +51,17 @@ RESPONSES = {
             "valueQuantity": {"value": 1.42, "unit": "mg/dL"},
         }
     ),
+    "category=vital-signs": bundle(
+        {
+            "resourceType": "Observation",
+            "id": "vital-1",
+            "status": "final",
+            "category": [{"coding": [{"code": "vital-signs"}]}],
+            "code": {"coding": [{"code": "8480-6", "display": "Systolic blood pressure"}]},
+            "effectiveDateTime": "2026-07-01T09:05:00Z",
+            "valueQuantity": {"value": 128, "unit": "mmHg"},
+        }
+    ),
     "/MedicationRequest?": bundle(
         {
             "resourceType": "MedicationRequest",
@@ -60,6 +71,17 @@ RESPONSES = {
             "authoredOn": "2026-06-20",
             "medicationCodeableConcept": {"text": "Tacrolimus 1 mg capsule"},
             "dosageInstruction": [{"text": "Take 1 mg twice daily"}],
+        }
+    ),
+    "/MedicationDispense?": bundle(
+        {
+            "resourceType": "MedicationDispense",
+            "id": "dispense-1",
+            "status": "completed",
+            "medicationCodeableConcept": {"text": "Tacrolimus 1 mg capsule"},
+            "whenHandedOver": "2026-06-21",
+            "quantity": {"value": 60, "unit": "capsule"},
+            "daysSupply": {"value": 30, "unit": "day"},
         }
     ),
     "/Condition?": bundle(
@@ -96,6 +118,74 @@ RESPONSES = {
             },
         }
     ),
+    "/CarePlan?": bundle(
+        {
+            "resourceType": "CarePlan",
+            "id": "careplan-1",
+            "status": "active",
+            "intent": "plan",
+            "category": [
+                {"coding": [{"code": "assess-plan", "display": "Assessment and Plan of Treatment"}]},
+                {"coding": [{"system": "http://snomed.info/sct", "code": "38717003", "display": "Longitudinal"}]},
+            ],
+            "period": {"start": "2026-06-01"},
+            "addresses": [{"reference": "Condition/condition-1", "display": "Kidney transplant status"}],
+            "goal": [{"reference": "Goal/goal-1", "display": "Stable renal function"}],
+            "activity": [{"reference": {"reference": "Appointment/appointment-1", "display": "Transplant follow-up"}}],
+        }
+    ),
+    "/DocumentReference?": bundle(
+        {
+            "resourceType": "DocumentReference",
+            "id": "note-1",
+            "status": "current",
+            "docStatus": "final",
+            "date": "2026-07-01T10:00:00Z",
+            "type": {"text": "Progress note"},
+            "content": [{"attachment": {
+                "contentType": "text/plain",
+                "url": "https://example.test/FHIR/R4/Binary/note-1",
+            }}],
+        }
+    ),
+    "/Binary/note-1": {
+        "resourceType": "Binary",
+        "id": "note-1",
+        "contentType": "text/plain",
+        "data": "VGFjcm9saW11cyBkb3NlIHVuY2hhbmdlZC4=",
+    },
+    "/ServiceRequest?": bundle(
+        {
+            "resourceType": "ServiceRequest",
+            "id": "request-1",
+            "status": "active",
+            "intent": "order",
+            "code": {"text": "Basic metabolic panel"},
+            "authoredOn": "2026-07-01",
+            "occurrenceDateTime": "2026-07-20",
+            "requester": {"display": "Transplant Clinic"},
+        }
+    ),
+    "/DiagnosticReport?": bundle(
+        {
+            "resourceType": "DiagnosticReport",
+            "id": "report-1",
+            "status": "final",
+            "code": {"text": "Renal function report"},
+            "effectiveDateTime": "2026-07-01T09:00:00Z",
+            "issued": "2026-07-01T10:00:00Z",
+            "conclusion": "Stable renal function",
+        }
+    ),
+    "/Procedure?": bundle(
+        {
+            "resourceType": "Procedure",
+            "id": "procedure-1",
+            "status": "completed",
+            "code": {"text": "Kidney transplant"},
+            "performedDateTime": "2020-03-10",
+        }
+    ),
 }
 
 
@@ -125,13 +215,15 @@ class CoreTest(unittest.TestCase):
                 "Epic sandbox",
                 "https://example.test/FHIR/R4",
                 PATIENT_ID,
+                authorization_scopes=["patient/*.read", "openid"],
+                fhir_user="Patient/sandbox-patient",
             )
             with patch.object(health_core, "http_get", fake_get):
                 first = health_core.sync(repo, "epic-sandbox", "test-token")
                 second = health_core.sync(repo, "epic-sandbox", "test-token")
 
             updated_responses = copy.deepcopy(RESPONSES)
-            updated_responses["/Observation?"]["entry"][0]["resource"]["valueQuantity"]["value"] = 1.50
+            updated_responses["category=laboratory"]["entry"][0]["resource"]["valueQuantity"]["value"] = 1.50
 
             def updated_get(url, _token):
                 for marker, document in updated_responses.items():
@@ -144,15 +236,25 @@ class CoreTest(unittest.TestCase):
 
             self.assertEqual(first["status"], "complete")
             self.assertEqual(second["status"], "complete")
-            self.assertEqual(sum(row["new_clinical_items"] for row in first["datasets"].values()), 5)
+            self.assertEqual(sum(row["new_clinical_items"] for row in first["datasets"].values()), 13)
             self.assertEqual(sum(row["new_clinical_items"] for row in second["datasets"].values()), 0)
             self.assertEqual(sum(row["new_clinical_items"] for row in third["datasets"].values()), 1)
 
             current = health_core.status(repo)
             self.assertEqual(current["sync_runs"], 3)
-            self.assertEqual(current["resource_versions"], 7)
-            self.assertEqual(current["clinical_items"], 6)
-            self.assertEqual(current["current_clinical_items"], 5)
+            self.assertEqual(current["resource_versions"], 15)
+            self.assertEqual(current["clinical_items"], 14)
+            self.assertEqual(current["current_clinical_items"], 13)
+            self.assertEqual(current["connection_details"][0]["provider"], "Epic sandbox")
+            self.assertEqual(
+                current["connection_details"][0]["authorization"]["scopes"],
+                ["openid", "patient/*.read"],
+            )
+            self.assertEqual(current["connection_details"][0]["latest_refresh"]["status"], "complete")
+            self.assertEqual(
+                {row["dataset"] for row in current["connection_details"][0]["coverage"]},
+                {dataset for dataset, _, _ in health_core.DATASETS} | {"document-binaries"},
+            )
 
             with health_core.connect(repo) as db:
                 rows = db.execute(
@@ -164,8 +266,10 @@ class CoreTest(unittest.TestCase):
                     """
                 ).fetchall()
                 self.assertEqual({row["kind"] for row in rows}, {
-                    "lab_result", "medication_order", "condition_assertion",
-                    "allergy_assertion", "encounter",
+                    "patient_profile", "lab_result", "vital_sign", "medication_order",
+                    "medication_dispense", "condition_assertion", "allergy_assertion",
+                    "encounter", "care_plan", "clinical_document", "service_request",
+                    "diagnostic_report", "procedure",
                 })
                 for row in rows:
                     raw = json.loads((repo / row["relative_path"]).read_bytes())
@@ -178,7 +282,7 @@ class CoreTest(unittest.TestCase):
                 self.assertEqual(json.loads(current_lab["value_json"])["valueQuantity"]["value"], 1.50)
 
             entries = health_core.timeline(repo)
-            self.assertEqual(len(entries), 5)
+            self.assertEqual(len(entries), 13)
             dated = [e["when"]["start"] or e["when"]["recorded"] for e in entries if not e["when"]["date_unknown"]]
             self.assertEqual(dated, sorted(dated))
             lab = next(e for e in entries if e["kind"] == "lab_result")
@@ -194,11 +298,22 @@ class CoreTest(unittest.TestCase):
 
             memory_dir = repo / "memory"
             memory_dir.mkdir()
+            patient_report = health_core.record_report(
+                repo, "patient", "I take tacrolimus twice daily", "sandbox patient"
+            )
+            correction = health_core.record_report(
+                repo, "patient", "I take tacrolimus once daily", "sandbox patient",
+                patient_report["id"][:12],
+            )
+            self.assertEqual(correction["supersedes"], patient_report["id"])
             (memory_dir / "timeline.md").write_text(
-                f"- Creatinine 1.5 mg/dL [ci:{lab['id'][:12]}]\n- bogus [ci:deadbeef0000]\n"
+                f"- Creatinine 1.5 mg/dL [ci:{lab['id'][:12]}]\n"
+                f"- Reports once-daily tacrolimus [report:{correction['id'][:12]}]\n"
+                "- bogus [ci:deadbeef0000]\n"
             )
             report = health_core.verify(repo)
             self.assertEqual(report["memory_citations"]["checked"], 1)
+            self.assertEqual(report["memory_citations"]["reports_checked"], 1)
             self.assertEqual(len(report["memory_citations"]["bad"]), 1)
             self.assertEqual(report["memory_citations"]["bad"][0]["citation"], "deadbeef0000")
 

@@ -94,7 +94,7 @@ The first refresh is evidence collection, not truth acquisition. It should:
 - Inventory providers, institutions, portals, and known missing sources.
 - Connect multiple health systems when care is fragmented.
 - Report exactly which organizations, date ranges, and resource types were queried.
-- Import appointments as well as clinical history.
+- Import clinical history including the longitudinal care plan; discover appointments through the runtime's calendar, email, and portal connectors and by asking the user.
 - Ask the patient or caregiver what is current, what is wrong, and what the record omits.
 - Reconcile medications, active concerns, clinician roles, and immediate follow-up.
 - Produce a confirmed baseline that preserves disagreement rather than flattening it.
@@ -115,7 +115,7 @@ The result appears in the agent task where the work is already happening and is 
 The trusted, model-independent data plane. It:
 
 - Maintains separate connections to multiple health systems.
-- Imports and refreshes records and appointments.
+- Imports and refreshes records, including care plans.
 - Preserves exact original sources and versions.
 - Normalizes source-grounded clinical items.
 - Stores patient and caregiver reports without confusing them with imported evidence.

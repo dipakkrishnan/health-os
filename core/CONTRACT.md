@@ -11,6 +11,10 @@ FHIR HTTP response (exact bytes)
     -> versioned FHIR resources
     -> regenerable clinical_items
     -> skill-owned timelines, case packets, and reviews
+
+Explicit patient/caregiver statement
+    -> immutable memory/sources report
+    -> reconciled memory views
 ```
 
 - `raw_blobs` are immutable and content-addressed.
@@ -18,6 +22,8 @@ FHIR HTTP response (exact bytes)
 - `resources` retain every distinct content version of a FHIR resource.
 - `clinical_items` are deterministic, regenerable indexes over resources.
 - Timelines and agent interpretations are downstream views, not source evidence.
+- Patient/caregiver reports are separate local sources, cited as `[report:…]`; they
+  never become imported clinical-record facts.
 
 ## Identity
 
@@ -43,13 +49,21 @@ clinical record is complete or correct.
 
 ## Clinical semantics
 
-The first parser intentionally supports only:
+The parser supports the first-refresh evidence surface:
 
+- `Patient` -> `patient_profile`;
 - laboratory `Observation` -> `lab_result`;
+- vital-sign `Observation` -> `vital_sign`;
 - `MedicationRequest` -> `medication_order`;
+- `MedicationDispense` -> `medication_dispense`;
 - `Condition` -> `condition_assertion`;
 - `AllergyIntolerance` -> `allergy_assertion`;
-- `Encounter` -> `encounter`.
+- `Encounter` -> `encounter`;
+- `CarePlan` (assess-plan) -> `care_plan`, preserving goals, addressed problems, and any inline activity references;
+- `DocumentReference` -> `clinical_document`, with same-origin `Binary` content preserved;
+- `ServiceRequest` -> `service_request`;
+- `DiagnosticReport` -> `diagnostic_report`;
+- `Procedure` -> `procedure`.
 
 A medication order is never promoted to confirmed medication use. A condition or
 allergy is an assertion with its original verification/status fields preserved.

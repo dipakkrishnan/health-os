@@ -29,12 +29,14 @@ Never state numeric claims the record does not contain.
 
 ## Gaps are findings
 
-A period with no items may mean nothing happened OR nothing was captured. Check the
-coverage table: datasets never synced (today: vitals, notes, procedures,
-immunizations, imaging) and date ranges before a connection's history are gaps, not
-evidence of absence.
+A period with no items may mean nothing happened OR nothing was captured. Check each
+connection's coverage: datasets never synced, failed or empty queries, organizations
+not connected, and dates before a source's visible history are gaps, not evidence of
+absence. A successful unbounded search means “all the source returned,” not “complete.”
 
 ## Citations resolve
 
-Every factual line ends with `[ci:<first 12 chars of clinical_item_id>]`. A citation
-you cannot resolve with `cite` must not appear. Multiple items may back one line.
+Every imported-record claim ends with `[ci:<first 12 chars of clinical_item_id>]`.
+Explicit patient/caregiver statements use `[report:<first 12 chars>]` and name the
+reporter role. A citation that fails `verify` must not appear. Multiple sources may
+back one line only when their truth categories remain visible.

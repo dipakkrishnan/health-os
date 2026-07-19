@@ -33,10 +33,11 @@ Updated 2026-07-16
 ### Local health core
 
 - SQLite contract and schema with append-only resource versions, exact content-addressed FHIR response bytes, and per-run/page audit records.
-- Current ingestion: patient demographics, labs, medication orders, conditions, allergies, and encounters.
-- Deterministic sync, parse, status, delta, timeline, citation, and verification commands.
-- All normalized evidence pointers are resolvable; `verify` exits nonzero for dangling source or memory citations.
-- Persistent cited memory with bootstrap and incremental updates over a local data repository.
+- Current ingestion: patient demographics, labs, vitals, medication orders and dispenses, conditions, allergies, encounters, longitudinal care plans, clinical documents and same-origin Binary content, service requests, diagnostic reports, and procedures.
+- `status` exposes each system, represented patient, recorded OAuth scopes or `unknown`, unattended-refresh capability, latest refresh result, and every expected dataset including `not_queried` ones.
+- Deterministic sync, parse, status, delta, timeline, citation, patient/caregiver report capture, and verification commands.
+- `verify` checks normalized evidence pointers plus citations to both imported clinical items and immutable local patient/caregiver reports.
+- Memory v2 preserves recorded evidence, clinical intent, and lived reality separately while maintaining compact views of medications, appointments, the care plan, conflicts, and source coverage.
 - Sandbox proof: four complete syncs with zero duplicate clinical items on repeat runs.
 
 ## Important gaps
@@ -45,25 +46,25 @@ These are workflow gaps, not reasons to build a larger platform first.
 
 1. **No real-patient baseline yet.** Production propagation and a first live connection still need to be exercised.
 2. **No setup/first-refresh skill.** The agent does not yet guide multi-system inventory, explain source coverage, interview the patient or caregiver, or confirm a skeptical baseline.
-3. **Appointments are not ingested.** Epic exposes [FHIR R4 Appointment search](https://fhir.epic.com/Specifications?api=10469), but `Appointment` is not in the current dataset or normalized views.
-4. **The three truths are not represented.** The core preserves imported evidence and corrections, but has no complete structure or workflow for clinical intent, lived reality, unresolved conflicts, and reconciliation history.
-5. **No proactive continuity loop.** There is no next-visit detection, visit-preparation skill, post-visit refresh, or change reconciliation.
-6. **Multiple connections are low-level.** Named connections exist, but users cannot yet connect, assess, and refresh several systems as one coherent record.
-7. **Native automations are not packaged.** `resync` is schedulable, but the skill does not offer to configure or manage the host runtime's automation and notification facilities.
-8. **Important feeds remain absent.** Notes, diagnostic reports, vitals, procedures, service requests, immunizations, portal messages, medication use, symptoms, and patient observations should be added as the appointment and reconciliation workflows demand them.
-9. **Operational hardening is incomplete.** Updates, deletions, partial failures, authorization expiry, per-system coverage differences, and refresh-all recovery need live exercise.
+3. **No next-appointment discovery.** Epic's Appointment API is non-USCDI and denied to the auto-distributed client, so the record cannot supply upcoming visits directly. Discovery must combine care-plan activity, the host runtime's calendar and email connectors, and user reports; no skill implements that yet.
+4. **No interactive reconciliation workflow.** Memory can represent and cite the three truths, but no skill yet conducts the skeptical interview or confirms an operational baseline with the user.
+5. **No proactive continuity loop.** There is no visit-preparation skill, post-visit refresh, or change reconciliation.
+6. **Multiple connections are low-level.** Named connections and honest per-system coverage exist, but users cannot yet refresh several systems as one coherent operation.
+7. **Native automations are not packaged.** `resync` is schedulable, but no skill offers to configure or manage the host runtime's automation and notification facilities.
+8. **Some feeds remain absent.** Immunizations, portal messages, device/wearable data, and structured symptoms remain workflow-driven additions. Actual medication use and patient observations must still come from explicit reports rather than being inferred from FHIR.
+9. **Operational hardening is incomplete.** Resource disappearance, partial failures, authorization expiry, institution-specific API differences, and refresh-all recovery need live exercise.
 
 ## Next vertical slice
 
 The next milestone is not “more FHIR.” It is one complete continuity loop around a real appointment.
 
-1. **Ship setup and first refresh.** Guide explicit local-repository setup; inventory providers and portals; connect one or more systems; show permissions and coverage; import records; interview the patient or caregiver; and save a confirmed baseline with conflicts intact. Never silently fall back to demo data.
+1. **Ship the interactive first refresh.** Inventory providers and portals; connect one or more systems; show permissions and coverage; interview the patient or caregiver; and save a confirmed baseline with conflicts intact. Setup is explicit and never falls back to demo data.
 2. **Make refresh a multi-system user operation.** Add a clear `refresh` surface (keeping compatibility with `resync`), refresh all selected connections, summarize changes and failures per source, and verify the repository afterward.
-3. **Ingest appointments.** Add FHIR `Appointment` search, preservation, normalization, coverage reporting, and a deterministic `next appointment` query. Document Epic's source-specific omissions rather than implying completeness.
+3. **Add next-appointment discovery.** Resolve the next visit from care-plan activity, the runtime's calendar and email connectors, and user reports; document source-specific omissions rather than implying completeness.
 4. **Build visit preparation.** Detect the next visit; identify the relevant clinician and prior encounter; compare interval changes; surface medication and plan conflicts, missing follow-up, and incomplete data; ask focused questions about lived reality; then emit a compact cited artifact in the active agent task.
 5. **Close the loop after the visit.** Refresh relevant systems, detect new notes, orders, results, referrals, and appointments, and ask the user to reconcile clinical intent with the plan that will actually be followed.
 6. **Offer runtime-native automation.** Let the skill offer recurring refresh and appointment-triggered preparation using the host agent's scheduler, permissions, task continuity, and notifications. Health OS owns the command and workflow recipe, not the scheduler.
-7. **Add only the feeds the loop exposes as necessary.** Likely early additions are notes/DocumentReference, DiagnosticReport, Observation categories beyond labs, ServiceRequest, Procedure, and patient/caregiver reports. Validate each against a real decision in the workflow.
+7. **Add only the feeds the loop exposes as necessary.** The initial first-refresh feeds are present; validate each against a real decision before adding more.
 8. **Evaluate with a real care episode.** Measure whether the loop finds a meaningful discrepancy, reduces preparation work, preserves the three truths, and produces questions a patient or caregiver actually uses.
 
 ## Validation questions for the slice
