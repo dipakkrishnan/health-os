@@ -291,6 +291,11 @@ class CoreTest(unittest.TestCase):
             self.assertEqual(citation["evidence"]["value"]["value"]["value"], 1.5)
             self.assertEqual(citation["evidence"]["time"]["value"], "2026-07-01T09:00:00Z")
 
+            note = next(e for e in entries if e["kind"] == "clinical_document")
+            rendered = health_core.document(repo, note["id"][:12])
+            self.assertEqual(rendered["attachments"][0]["text"], "Tacrolimus dose unchanged.")
+            self.assertTrue(rendered["attachments"][0]["fetched"])
+
             changes = health_core.delta(repo, first["sync_run_id"])
             self.assertEqual(changes["latest_run"], third["sync_run_id"])
             self.assertEqual([e["kind"] for e in changes["new_items"]], ["lab_result"])

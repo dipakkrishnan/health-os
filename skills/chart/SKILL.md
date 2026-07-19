@@ -42,6 +42,11 @@ write to the health database.
 9. When the user questions a fact, resolve the citation with
    `cite --repo <repo> <id-prefix>` — it returns the exact field pointers, values,
    and raw source bytes behind the item.
+10. To read a note, imaging narrative, or encounter/patient summary, run
+   `document --repo <repo> <id-prefix>` on a `clinical_document` item — it renders
+   the stored attachment (HTML, RTF, or C-CDA XML) as plain text. Facts you quote
+   from it cite that document's `[ci:…]`. The rendering is a projection; if wording
+   is disputed, the raw blob is the ground truth.
 
 Script examples:
 

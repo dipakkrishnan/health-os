@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import base64
 import hashlib
 import json
 import os
@@ -14,6 +15,8 @@ import urllib.error
 import urllib.parse
 import urllib.request
 import uuid
+import xml.etree.ElementTree as ET
+from html.parser import HTMLParser
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterable
@@ -1050,6 +1053,132 @@ def cite(repo: Path, item_id_prefix: str) -> dict[str, Any]:
     }
 
 
+class _HTMLText(HTMLParser):
+    _BLOCKS = {"br", "p", "div", "li", "tr", "td", "h1", "h2", "h3", "h4", "table", "ul", "ol"}
+
+    def __init__(self) -> None:
+        super().__init__(convert_charrefs=True)
+        self.parts: list[str] = []
+
+    def handle_starttag(self, tag: str, attrs: list) -> None:
+        if tag in self._BLOCKS:
+            self.parts.append("\n")
+
+    def handle_data(self, data: str) -> None:
+        self.parts.append(data)
+
+
+def _collapse(text: str) -> str:
+    text = re.sub(r"[ \t]+", " ", text)
+    text = re.sub(r" ?\n ?", "\n", text)
+    return re.sub(r"\n{3,}", "\n\n", text).strip()
+
+
+def attachment_text(content_type: str | None, data: bytes) -> str:
+    """Deterministic plain-text rendering of a stored attachment.
+
+    The raw blob remains the ground truth; this is a readable projection."""
+    media = (content_type or "").split(";")[0].strip().lower()
+    if media in ("text/html", "application/xhtml+xml"):
+        parser = _HTMLText()
+        parser.feed(data.decode("utf-8", "replace"))
+        return _collapse("".join(parser.parts))
+    if media in ("text/rtf", "application/rtf"):
+        text = data.decode("latin-1", "replace")
+        text = re.sub(r"\{\\\*[^{}]*\}", "", text)
+        text = re.sub(r"\\par(?![a-z])", "\n", text)
+        text = re.sub(r"\\'([0-9a-fA-F]{2})", lambda m: chr(int(m.group(1), 16)), text)
+        text = re.sub(r"\\[a-zA-Z]+-?\d* ?", "", text)
+        return _collapse(text.replace("{", "").replace("}", ""))
+    if media in ("application/xml", "text/xml"):
+        # ponytail: text nodes only — CDA coded attributes stay in the raw blob;
+        # extract displayName/value attributes if a workflow ever needs them
+        root = ET.fromstring(data)
+        parts = []
+        for element in root.iter():
+            tag = element.tag.rsplit("}", 1)[-1]
+            own = (element.text or "").strip()
+            if tag == "title" and own:
+                parts.append(f"\n\n# {own}\n")
+            elif own:
+                parts.append(own + " ")
+            if tag in ("br", "paragraph", "item", "tr"):
+                parts.append("\n")
+            tail = (element.tail or "").strip()
+            if tail:
+                parts.append(tail + " ")
+        return _collapse("".join(parts))
+    return _collapse(data.decode("utf-8", "replace"))
+
+
+def document(repo: Path, item_id_prefix: str) -> dict[str, Any]:
+    """Render a clinical document's stored attachments as cited plain text."""
+    with connect(repo) as db:
+        rows = db.execute(
+            """
+            SELECT * FROM current_clinical_items
+            WHERE kind='clinical_document' AND clinical_item_id LIKE ?
+            """,
+            (f"{item_id_prefix}%",),
+        ).fetchall()
+        if not rows:
+            raise SystemExit(f"No current clinical document matches id prefix {item_id_prefix!r}")
+        if len(rows) > 1:
+            raise SystemExit(f"Ambiguous id prefix {item_id_prefix!r} ({len(rows)} matches)")
+        row = rows[0]
+        fhir_base = db.execute(
+            "SELECT fhir_base FROM connections WHERE connection_id=?",
+            (row["connection_id"],),
+        ).fetchone()[0]
+        value = json.loads(row["value_json"])
+        attachments = []
+        for content in value.get("content", []):
+            attachment = (content or {}).get("attachment") or {}
+            content_type = attachment.get("contentType")
+            data_bytes, blob_path = None, None
+            if attachment.get("url"):
+                absolute = urllib.parse.urljoin(f"{fhir_base.rstrip('/')}/", attachment["url"])
+                page = db.execute(
+                    """
+                    SELECT rb.relative_path, rb.media_type
+                    FROM sync_pages sp JOIN raw_blobs rb ON rb.sha256=sp.blob_sha256
+                    WHERE sp.request_url=? AND sp.http_status BETWEEN 200 AND 299
+                    ORDER BY sp.retrieved_at DESC, sp.rowid DESC LIMIT 1
+                    """,
+                    (absolute,),
+                ).fetchone()
+                if page:
+                    raw = (repo / page["relative_path"]).read_bytes()
+                    blob_path = page["relative_path"]
+                    data_bytes = raw
+                    if "json" in page["media_type"]:
+                        try:
+                            binary = json.loads(raw)
+                        except json.JSONDecodeError:
+                            binary = None
+                        if isinstance(binary, dict) and binary.get("resourceType") == "Binary":
+                            content_type = binary.get("contentType") or content_type
+                            data_bytes = base64.b64decode(binary.get("data") or "")
+            elif attachment.get("data"):
+                data_bytes = base64.b64decode(attachment["data"])
+            attachments.append({
+                "content_type": content_type,
+                "url": attachment.get("url"),
+                "blob": blob_path,
+                "fetched": data_bytes is not None,
+                "text": attachment_text(content_type, data_bytes) if data_bytes is not None else None,
+            })
+    return {
+        "clinical_item_id": row["clinical_item_id"],
+        "display": row["display"],
+        "date": row["effective_start"] or row["recorded_at"],
+        "status": row["status"],
+        "doc_status": value.get("docStatus"),
+        "connection": row["connection_id"],
+        "attachments": attachments,
+    }
+
+
 def record_report(
     repo: Path,
     reporter_role: str,
@@ -1206,6 +1335,10 @@ def main() -> None:
     cite_parser.add_argument("--repo", type=Path, required=True)
     cite_parser.add_argument("item_id", help="Clinical item id (prefix allowed)")
 
+    document_parser = subparsers.add_parser("document")
+    document_parser.add_argument("--repo", type=Path, required=True)
+    document_parser.add_argument("item_id", help="Clinical document item id (prefix allowed)")
+
     delta_parser = subparsers.add_parser("delta")
     delta_parser.add_argument("--repo", type=Path, required=True)
     delta_parser.add_argument("--after", required=True, help="Sync run id the memory is current through")
@@ -1244,6 +1377,8 @@ def main() -> None:
         print(json.dumps(timeline(args.repo, args.kind, args.query, args.since, args.until), indent=2))
     elif args.command == "cite":
         print(json.dumps(cite(args.repo, args.item_id), indent=2))
+    elif args.command == "document":
+        print(json.dumps(document(args.repo, args.item_id), indent=2))
     elif args.command == "record-report":
         print(json.dumps(record_report(
             args.repo, args.reporter_role, args.statement, args.subject, args.supersedes,

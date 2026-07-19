@@ -60,7 +60,7 @@ The parser supports the first-refresh evidence surface:
 - `AllergyIntolerance` -> `allergy_assertion`;
 - `Encounter` -> `encounter`;
 - `CarePlan` (assess-plan) -> `care_plan`, preserving goals, addressed problems, and any inline activity references;
-- `DocumentReference` -> `clinical_document`, with same-origin `Binary` content preserved;
+- `DocumentReference` -> `clinical_document`, with same-origin `Binary` content preserved; the `document` command renders stored HTML/RTF/C-CDA attachments as deterministic plain text for reading and citation;
 - `ServiceRequest` -> `service_request`;
 - `DiagnosticReport` -> `diagnostic_report`;
 - `Procedure` -> `procedure`.
