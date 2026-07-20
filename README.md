@@ -38,9 +38,15 @@ Or clone this repository and run Claude Code inside it — the skills load from
 
 ### Codex
 
-Install **Health OS** from Plugins in the Codex app, or clone this repository and
-open it as a local project while developing. The same skills are shared by both
-runtimes; only their native scheduling instructions differ.
+Add the Health OS marketplace and install the plugin:
+
+```bash
+codex plugin marketplace add dipakkrishnan/health-os
+codex plugin add health-os@health-os
+```
+
+Then start a new Codex task so the skills are loaded. The same skills are shared
+by Codex and Claude Code; only their native scheduling instructions differ.
 
 ## Setup
 
