@@ -23,6 +23,7 @@ from typing import Any, Iterable
 
 
 PARSER_VERSION = "fhir-r4-v2"
+SCHEMA_VERSION = "3"
 SCHEMA = Path(__file__).with_name("schema.sql")
 DATASETS = (
     ("patient", "Patient", None),
@@ -70,8 +71,12 @@ def connect(repo: Path) -> sqlite3.Connection:
     if db.execute(
         "SELECT 1 FROM sqlite_master WHERE type='table' AND name='metadata'"
     ).fetchone():
-        migrate_schema(db)
-        db.commit()
+        current = db.execute(
+            "SELECT value FROM metadata WHERE key='schema_version'"
+        ).fetchone()
+        if not current or current[0] != SCHEMA_VERSION:
+            migrate_schema(db)
+            db.commit()
     return db
 
 
@@ -110,7 +115,7 @@ def migrate_schema(db: sqlite3.Connection) -> None:
         WHERE r.is_current=1
         """
     )
-    db.execute("UPDATE metadata SET value='3' WHERE key='schema_version'")
+    db.execute("UPDATE metadata SET value=? WHERE key='schema_version'", (SCHEMA_VERSION,))
 
 
 def initialize(

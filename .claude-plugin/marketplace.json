@@ -10,7 +10,7 @@
       "name": "health-os",
       "source": "./",
       "description": "Local-first health context with grounded, citation-checked agent workflows.",
-      "version": "0.2.0",
+      "version": "0.2.1",
       "author": {
         "name": "Dipak Krishnan",
         "url": "https://github.com/dipakkrishnan"
