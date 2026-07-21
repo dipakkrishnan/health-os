@@ -206,6 +206,25 @@ def resolve_pointer(document, pointer):
 
 
 class CoreTest(unittest.TestCase):
+    def test_current_schema_reads_do_not_run_migrations(self):
+        with tempfile.TemporaryDirectory() as directory:
+            repo = Path(directory)
+            health_core.initialize(
+                repo,
+                "epic-sandbox",
+                "Epic sandbox",
+                "https://example.test/FHIR/R4",
+                PATIENT_ID,
+            )
+            with patch.object(
+                health_core,
+                "migrate_schema",
+                side_effect=AssertionError("current-schema read attempted migration"),
+            ):
+                self.assertEqual(health_core.status(repo)["connections"], 1)
+                self.assertEqual(health_core.timeline(repo), [])
+                self.assertEqual(health_core.verify(repo)["dangling"], [])
+
     def test_sync_is_idempotent_and_provenance_resolves(self):
         with tempfile.TemporaryDirectory() as directory:
             repo = Path(directory)

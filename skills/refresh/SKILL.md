@@ -21,7 +21,9 @@ questions whose answers change the picture.
    first-time setup below. Never use sandbox data.
 3. Connecting and refreshing need `python3` with the `cryptography` package
    (`pip install -r <plugin-root>/core/requirements.txt`, ideally in a venv). Check
-   before promising a refresh, and help install if missing.
+   before promising a refresh. Reuse a compatible environment or create one local
+   to the workspace and request the minimum installation approval. Report the
+   outcome, not each probe, failed command, or implementation detail.
 4. Before the first record access in a task, explain that selected local context
    will be processed by the active agent runtime and follow its configured data
    policy. Stop if the user declines.
@@ -42,6 +44,9 @@ learn command names, connection IDs, or FHIR vocabulary.
 3. **Inventory care before connecting.** Ask where the patient receives care —
    health systems, portals they can log into, and care that has no portal. Systems
    named but not connected go into coverage as known-missing sources, not silence.
+   If the user chooses one system without answering about the rest, acknowledge the
+   deferral and revisit it once before the baseline; do not ask as though their
+   earlier answer was lost.
 4. **Connect one system at a time:**
 
    ```bash
@@ -51,7 +56,11 @@ learn command names, connection IDs, or FHIR vocabulary.
 
    A browser opens for the patient portal login. For caregivers: use the portal's
    own proxy access if they have it; never ask for or encourage sharing the
-   patient's credentials. Repeat for each additional system.
+   patient's credentials. Keep the connection process under observation and resume
+   when its callback completes. Do not ask the user to type `done` when the runtime
+   can observe completion; ask only if the page did not open, an error appeared, or
+   the runtime genuinely cannot monitor the process. Repeat for each additional
+   system.
 5. After the first successful connection and sync, continue with the coverage
    explanation and interview below — setup and first refresh are one experience.
 
@@ -73,11 +82,19 @@ learn command names, connection IDs, or FHIR vocabulary.
 From `status`, per connection: provider, represented patient, granted scopes (or
 `unknown`), latest refresh result, and each dataset's status. Then the rules:
 
+- Say that all **configured queries completed**, never that the person's record is
+  complete.
 - `empty` or `not_queried` is not "none exist". "Not on file" is not "no allergies".
 - Upcoming appointments are special: most organizations' records cannot expose them
-  to this client. Look for them in care-plan activity; if the runtime has calendar
-  or email access the user has authorized, offer to check there; otherwise ask.
-  Every appointment fact states its source (record, calendar, email, or report).
+  to this client. Look first in care-plan activity, then inventory calendar and
+  email connectors already authorized in the runtime and proactively offer to check
+  the relevant accounts before asking the user to reconstruct the schedule. Search
+  narrowly and state the account/calendar and time range checked. A connector result
+  and the user's confirmation are different evidence: never rewrite the connector
+  observation as a patient report. Until connector evidence has a durable citation,
+  preserve only the user's explicit confirmation and label the connector check as
+  session-only. Every appointment claim states its source (record, calendar, email,
+  or report).
 - Name the systems the user said exist but that are not connected.
 
 ## The first-refresh interview
@@ -88,7 +105,9 @@ clinical intent lives. Build a private list of candidate questions, then ask onl
 the ones whose answers would change the baseline, **one at a time**, highest value
 first. Use the runtime's structured question tool when one exists; otherwise ask
 plainly in chat and wait. Follow `references/interview_guide.md` for question
-patterns and priority order.
+patterns and priority order. After five substantive questions, offer the guide's
+pause before continuing. A report can clarify lived reality; do not say it resolves
+a conflicting order, note, or clinical intent unless the competing sides now agree.
 
 Preserve what you learn as you go — ask permission once per task, then:
 
