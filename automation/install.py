@@ -29,7 +29,8 @@ def main() -> None:
     repo = args.repo.expanduser().resolve()
     if not (repo / "health.sqlite").is_file():
         parser.error(f"not a Health OS data repository: {repo}")
-    python = args.python.expanduser().resolve()
+    # Keep a virtualenv's symlink path; resolving it would silently drop its packages.
+    python = args.python.expanduser().absolute()
     if not python.is_file() or not os.access(python, os.X_OK):
         parser.error(f"Python interpreter is not executable: {python}")
 
