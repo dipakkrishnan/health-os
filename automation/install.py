@@ -27,7 +27,7 @@ def main() -> None:
 
     plugin = Path(__file__).resolve().parent.parent
     repo = args.repo.expanduser().resolve()
-    if not (repo / "health.db").is_file():
+    if not (repo / "health.sqlite").is_file():
         parser.error(f"not a Health OS data repository: {repo}")
     python = args.python.expanduser().resolve()
     if not python.is_file() or not os.access(python, os.X_OK):
@@ -65,7 +65,7 @@ def main() -> None:
         environment=(
             ("HEALTH_OS_REPO", str(repo)),
             ("PLUGIN_ROOT", str(plugin)),
-            ("PATH", os.environ.get("PATH", "/usr/bin:/bin")),
+            ("PATH", "/usr/bin:/bin:/usr/sbin:/sbin"),
         ),
     )
     print(f"Installed {install(task)}")
