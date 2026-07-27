@@ -1,0 +1,4 @@
+interface:
+  display_name: "Visit Prep"
+  short_description: "Prepare a cited brief for the next visit"
+  default_prompt: "Use $visit-prep to prepare me for the next appointment."
