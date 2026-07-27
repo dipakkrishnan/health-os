@@ -139,12 +139,24 @@ Corrections use `--supersedes`. Never record your own inference as a report.
 
 ## Ongoing automation
 
-After a successful baseline, offer — never silently install — a recurring refresh
-using the host runtime's local scheduler (Codex automations; Claude Code scheduled
-tasks). It must run on this machine: the repository is local, so a cloud routine
-cannot do this job. Distinguish clearly and get separate consent for:
+After a successful baseline, offer — never silently install — a recurring refresh.
+It must run on this machine: the repository is local, so a cloud routine cannot do
+this job. Distinguish clearly and get separate consent for:
 
 - **Deterministic maintenance:** resync + verify; no model reads record content.
 - **Agentic review:** the model reads changes to summarize or flag them.
 
 Default to quiet: an automation should speak only when something actionable changed.
+For an approved agentic refresh, ask which installed agent should run it, daily or
+weekly cadence, local hour, and optional model. Then install the product-owned prompt
+through Windup:
+
+```bash
+uv run <plugin-root>/automation/install.py \
+  --agent <codex|claude> --repo <repo> --python <compatible-python> \
+  --cadence <daily|weekly> --hour <0-23>
+```
+
+Use the compatible Python environment resolved above. Report the installed scheduler
+path. Windup owns only the local schedule; this skill and
+`automation/agentic-refresh.md` own the health workflow.
