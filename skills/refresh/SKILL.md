@@ -91,11 +91,24 @@ From `status`, per connection: provider, represented patient, granted scopes (or
   the relevant accounts before asking the user to reconstruct the schedule. Search
   narrowly and state the account/calendar and time range checked. A connector result
   and the user's confirmation are different evidence: never rewrite the connector
-  observation as a patient report. Until connector evidence has a durable citation,
-  preserve only the user's explicit confirmation and label the connector check as
-  session-only. Every appointment claim states its source (record, calendar, email,
-  or report).
+  observation as a patient report. After the runtime connector returns, preserve the
+  minimal query and result with `record-observation`; Health OS does not fetch from
+  Google itself. Cite the resulting source as `[event:<id>]`. Every appointment claim
+  states its source (record, calendar, email, event observation, or report).
 - Name the systems the user said exist but that are not connected.
+
+For example, after searching the Google Calendar connector:
+
+```bash
+python3 <plugin-root>/core/health_core.py record-observation \
+  --repo <repo> --connector google-calendar --account "<account or calendar>" \
+  --query-json '{"time_min":"<ISO>","time_max":"<ISO>"}' \
+  --result-json '{"events":[{"id":"<stable id>","title":"<title>","start":"<ISO>"}]}'
+```
+
+Store only fields needed to support the health claim. An empty `events` list is
+valid evidence of what that bounded search returned, not proof that no appointment
+exists elsewhere.
 
 ## The first-refresh interview
 

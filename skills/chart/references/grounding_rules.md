@@ -38,5 +38,7 @@ absence. A successful unbounded search means “all the source returned,” not 
 
 Every imported-record claim ends with `[ci:<first 12 chars of clinical_item_id>]`.
 Explicit patient/caregiver statements use `[report:<first 12 chars>]` and name the
-reporter role. A citation that fails `verify` must not appear. Multiple sources may
+reporter role. Refresh/coverage claims use `[sync:<id>]`; runtime connector results
+use `[event:<id>]`. Resolve operational citations with `evidence --repo <repo>
+<citation>`. A citation that fails `verify` must not appear. Multiple sources may
 back one line only when their truth categories remain visible.

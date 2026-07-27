@@ -10,7 +10,7 @@
 ├── care-plan.md        # intent, lived reality, and operational next steps
 ├── conflicts.md        # unresolved disagreements and discriminating questions
 ├── coverage.md         # connected systems, permissions, query results, missing sources
-└── sources/            # immutable patient/caregiver report JSON files
+└── sources/            # immutable report and runtime-connector observation JSON
 ```
 
 ## Manifest
@@ -30,6 +30,9 @@ The watermark advances after all new items are incorporated and citations verify
 - Imported record claims end in one or more `[ci:<12-char id>]` citations.
 - Patient and caregiver claims end in `[report:<12-char id>]` and state the reporter
   role and report date in prose.
+- Refresh and coverage claims end in `[sync:<run id>]`.
+- Runtime connector observations end in `[event:<12-char id>]`; they establish only
+  what the named account and bounded query returned.
 - Clinical intent cites the note, order, or message that expresses it. If intent is
   reconstructed, label it “Interpretation” and cite the contributing items.
 - Agent interpretation never receives a source citation that implies it was stated.
@@ -50,6 +53,10 @@ The watermark advances after all new items are incorporated and citations verify
 
 Create sources only through `health_core.py record-report`. A correction appends a
 new source with `supersedes`; it never edits the earlier statement.
+
+Connector observations are also append-only and are created with
+`health_core.py record-observation` after the host runtime performs the search.
+Health OS never uses them as credentials or fetches the external account itself.
 
 ## View conventions
 
@@ -87,9 +94,10 @@ List upcoming appointments first, then recent appointments relevant to active ca
 The record itself rarely exposes upcoming visits: they come from care-plan activity
 when an organization inlines them `[ci:…]`, from the runtime's calendar or email
 connectors, or from what the patient or caregiver reports `[report:…]`. State each
-entry's source; include status, time, participant/location when present, and
-preparation state if another workflow has established it. An empty list is a
-coverage statement, not proof that no visit exists.
+entry's source; cite connector results `[event:…]`; include status, time,
+participant/location when present, and preparation state if another workflow has
+established it. An empty list is a coverage statement, not proof that no visit
+exists.
 
 ### care-plan.md
 

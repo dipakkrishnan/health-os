@@ -15,6 +15,10 @@ FHIR HTTP response (exact bytes)
 Explicit patient/caregiver statement
     -> immutable memory/sources report
     -> reconciled memory views
+
+Runtime connector result
+    -> immutable memory/sources observation
+    -> cited calendar or email coverage
 ```
 
 - `raw_blobs` are immutable and content-addressed.
@@ -24,6 +28,9 @@ Explicit patient/caregiver statement
 - Timelines and agent interpretations are downstream views, not source evidence.
 - Patient/caregiver reports are separate local sources, cited as `[report:…]`; they
   never become imported clinical-record facts.
+- Runtime connectors remain responsible for external access. Health OS stores only
+  the minimal observed query and result needed to support `[event:…]` citations.
+- Sync claims cite `[sync:…]`; `verify` resolves them to the recorded run and pages.
 
 ## Identity
 

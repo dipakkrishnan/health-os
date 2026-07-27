@@ -66,10 +66,11 @@ states why you are asking, in plain language. One question at a time.
 # Health baseline — <patient> — <date>
 
 ## Connected
-- <org> (<connection id>): records <range>, refreshed <date> [status]
+- <org> (<connection id>): records <range>, refreshed <date> [sync:…]
 
 ## Known missing
-- <named but unconnected systems, denied datasets, date-range limits, note gaps>
+- <named but unconnected systems, denied datasets, date-range limits, note gaps;
+  cite record queries [sync:…], connector checks [event:…], or reports [report:…]>
 
 ## Current picture (tentative)
 - <the few load-bearing facts, each cited [ci:…] or [report:…]>
@@ -81,8 +82,8 @@ states why you are asking, in plain language. One question at a time.
 - <each conflict: the two sides with citations, why it matters, who can resolve it>
 
 ## Next known care event
-- <event + source: record | calendar | email | report> — or "None known; sources
-  checked: <list>"
+- <event + source: record [ci:…] | calendar/email [event:…] | report [report:…]> —
+  or "None known; sources checked: <cited list>"
 ```
 
 Every factual line carries a citation. Uncertainty is written down, not resolved by
