@@ -161,3 +161,7 @@ cannot do this job. Distinguish clearly and get separate consent for:
 - **Agentic review:** the model reads changes to summarize or flag them.
 
 Default to quiet: an automation should speak only when something actionable changed.
+Also offer the paired caregiver workflows when relevant: a morning-brief automation
+at the user's chosen time and a later visit-horizon check that invokes visit prep
+only when an appointment or its preparation changes. The skills define the work;
+the host runtime owns scheduling, history, interruption, and notifications.

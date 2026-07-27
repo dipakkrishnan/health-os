@@ -17,8 +17,14 @@ Every stated fact carries a citation that resolves back to source bytes.
 - `chart` — consults that understanding to answer questions: lab trends, medication
   history, care plans, notes, open orders, conditions, encounters, and grounded
   chronological views — every fact cited.
+- `refresh` — connects systems, updates the local record, and conducts the skeptical
+  first-refresh interview.
+- `morning-brief` — ranks what needs attention today and soon for a patient or
+  caregiver across medications, daily life, follow-up, and upcoming care.
+- `visit-prep` — finds the next visit through local context or runtime connectors,
+  reads prior morning briefs, and produces a compact cited preparation artifact.
 
-More to come: visit prep, medication reconciliation, cross-specialty deep review.
+More to come: post-visit reconciliation and cross-specialty deep review.
 
 Read the [design thesis](design-thesis.md) for the full picture, and
 [PROGRESS.md](PROGRESS.md) for current status.
@@ -76,5 +82,6 @@ machine and stay there; credentials live in the OS keychain. See
 
 ## Status
 
-Early and under active development. Epic (sandbox-verified) is the first supported
-EHR vendor. Not a medical device; not a substitute for care from your clinicians.
+Early and under active development. Epic is the first supported EHR vendor and has
+been exercised against sandbox and real patient-access data. Not a medical device;
+not a substitute for care from your clinicians.

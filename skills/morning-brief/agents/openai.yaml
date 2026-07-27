@@ -1,0 +1,4 @@
+interface:
+  display_name: "Caregiver Morning Brief"
+  short_description: "Prioritize today’s care and coordination"
+  default_prompt: "Use $morning-brief to tell me what needs attention for my loved one today."

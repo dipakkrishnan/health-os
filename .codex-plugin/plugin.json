@@ -1,6 +1,6 @@
 {
   "name": "health-os",
-  "version": "0.2.2",
+  "version": "0.3.0",
   "description": "Local-first health context with grounded, citation-checked agent workflows",
   "author": {
     "name": "Dipak Krishnan",
@@ -32,7 +32,9 @@
     "defaultPrompt": [
       "Connect my health records",
       "Refresh my health records and tell me what changed",
-      "What systems and data does my health record cover?"
+      "What systems and data does my health record cover?",
+      "What needs attention for my loved one today?",
+      "Prepare me for the next appointment"
     ],
     "brandColor": "#2F6F5E"
   }
