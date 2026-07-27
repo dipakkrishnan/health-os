@@ -1206,6 +1206,7 @@ def record_report(
             raise SystemExit(f"Superseded report prefix must resolve once; found {len(matches)}")
         supersedes = matches[0].stem
     report = {
+        "type": "report",
         "id": uuid.uuid4().hex,
         "recorded_at": utcnow(),
         "reporter_role": reporter_role.strip(),
@@ -1218,6 +1219,71 @@ def record_report(
     temporary.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n")
     os.replace(temporary, destination)
     return report
+
+
+def record_connector_observation(
+    repo: Path,
+    connector: str,
+    account: str,
+    query: Any,
+    result: Any,
+) -> dict[str, Any]:
+    """Preserve a runtime connector result without fetching through Health OS."""
+    if not database_path(repo).is_file():
+        raise SystemExit(f"No health repository at {repo}")
+    if not connector.strip() or not account.strip():
+        raise SystemExit("Connector and account must not be empty")
+    observation = {
+        "type": "connector_observation",
+        "id": uuid.uuid4().hex,
+        "observed_at": utcnow(),
+        "connector": connector.strip(),
+        "account": account.strip(),
+        "query": query,
+        "result": result,
+    }
+    sources = repo / "memory" / "sources"
+    sources.mkdir(parents=True, exist_ok=True)
+    destination = sources / f"{observation['id']}.json"
+    temporary = destination.with_suffix(".tmp")
+    temporary.write_text(json.dumps(observation, indent=2, ensure_ascii=False) + "\n")
+    os.replace(temporary, destination)
+    return observation
+
+
+def cite_operational(repo: Path, reference: str) -> dict[str, Any]:
+    """Resolve a sync, report, or connector-observation citation."""
+    kind, separator, prefix = reference.partition(":")
+    if not separator or kind not in {"sync", "report", "event"}:
+        raise SystemExit("Operational citation must be sync:<id>, report:<id>, or event:<id>")
+    if not re.fullmatch(r"[0-9a-fA-F-]{6,64}", prefix):
+        raise SystemExit(f"Invalid {kind} id prefix {prefix!r}")
+    if kind == "sync":
+        with connect(repo) as db:
+            rows = db.execute(
+                "SELECT * FROM sync_runs WHERE sync_run_id LIKE ?", (f"{prefix}%",)
+            ).fetchall()
+            if len(rows) == 1:
+                pages = db.execute(
+                    """
+                    SELECT dataset, page_number, request_url, retrieved_at, http_status, blob_sha256
+                    FROM sync_pages WHERE sync_run_id=? ORDER BY dataset, page_number
+                    """,
+                    (rows[0]["sync_run_id"],),
+                ).fetchall()
+        if not rows:
+            raise SystemExit(f"No sync run matches id prefix {prefix!r}")
+        if len(rows) > 1:
+            raise SystemExit(f"Ambiguous sync id prefix {prefix!r} ({len(rows)} matches)")
+        return {"type": "sync", **dict(rows[0]), "pages": [dict(page) for page in pages]}
+    matches = list((repo / "memory" / "sources").glob(f"{prefix}*.json"))
+    if len(matches) != 1:
+        raise SystemExit(f"{kind.title()} id prefix must resolve once; found {len(matches)}")
+    payload = json.loads(matches[0].read_text())
+    expected_type = "report" if kind == "report" else "connector_observation"
+    if payload.get("type", "report") != expected_type:
+        raise SystemExit(f"Citation {reference!r} resolves to {payload.get('type')!r}")
+    return payload
 
 
 def verify(repo: Path) -> dict[str, Any]:
@@ -1242,23 +1308,41 @@ def verify(repo: Path) -> dict[str, Any]:
                     {"clinical_item_id": row["clinical_item_id"], "kind": row["kind"],
                      "display": row["display"], "field": field, "pointer": ptr}
                 )
-    memory_citations: dict[str, Any] = {"checked": 0, "reports_checked": 0, "bad": []}
+    memory_citations: dict[str, Any] = {
+        "checked": 0,
+        "reports_checked": 0,
+        "syncs_checked": 0,
+        "events_checked": 0,
+        "bad": [],
+    }
     memory_dir = repo / "memory"
     if memory_dir.is_dir():
         with connect(repo) as db:
             ids = [r[0] for r in db.execute("SELECT clinical_item_id FROM current_clinical_items")]
+            sync_ids = [r[0] for r in db.execute("SELECT sync_run_id FROM sync_runs")]
         reports: dict[str, dict[str, Any]] = {}
+        events: dict[str, dict[str, Any]] = {}
         for source in sorted((memory_dir / "sources").glob("*.json")):
             try:
                 payload = json.loads(source.read_text())
             except (OSError, json.JSONDecodeError) as error:
                 memory_citations["bad"].append({"file": str(source.relative_to(memory_dir)), "error": str(error)})
                 continue
-            required = ("id", "recorded_at", "reporter_role", "statement")
-            if not isinstance(payload, dict) or any(not payload.get(field) for field in required):
+            source_type = payload.get("type", "report") if isinstance(payload, dict) else None
+            required = (
+                ("id", "observed_at", "connector", "account", "query", "result")
+                if source_type == "connector_observation"
+                else ("id", "recorded_at", "reporter_role", "statement")
+            )
+            if not isinstance(payload, dict) or any(
+                field not in payload
+                or payload[field] is None
+                or (isinstance(payload[field], str) and not payload[field].strip())
+                for field in required
+            ):
                 memory_citations["bad"].append({
                     "file": str(source.relative_to(memory_dir)),
-                    "error": f"report source requires {', '.join(required)}",
+                    "error": f"{source_type or 'unknown'} source requires {', '.join(required)}",
                 })
                 continue
             if payload["id"] != source.stem:
@@ -1267,7 +1351,15 @@ def verify(repo: Path) -> dict[str, Any]:
                     "error": "report id must match filename",
                 })
                 continue
-            reports[payload["id"]] = payload
+            if source_type == "connector_observation":
+                events[payload["id"]] = payload
+            elif source_type == "report":
+                reports[payload["id"]] = payload
+            else:
+                memory_citations["bad"].append({
+                    "file": str(source.relative_to(memory_dir)),
+                    "error": f"unknown source type: {source_type}",
+                })
         for report_id, payload in reports.items():
             supersedes = payload.get("supersedes")
             if supersedes and supersedes not in reports:
@@ -1295,6 +1387,22 @@ def verify(repo: Path) -> dict[str, Any]:
                 else:
                     memory_citations["bad"].append(
                         {"file": md_file.name, "report": prefix, "matches": len(matches)}
+                    )
+            for prefix in re.findall(r"\[sync:([0-9a-fA-F-]{6,64})\]", md_file.read_text()):
+                matches = [sync_id for sync_id in sync_ids if sync_id.startswith(prefix.lower())]
+                if len(matches) == 1:
+                    memory_citations["syncs_checked"] += 1
+                else:
+                    memory_citations["bad"].append(
+                        {"file": md_file.name, "sync": prefix, "matches": len(matches)}
+                    )
+            for prefix in re.findall(r"\[event:([0-9a-fA-F]{6,64})\]", md_file.read_text()):
+                matches = [event_id for event_id in events if event_id.startswith(prefix.lower())]
+                if len(matches) == 1:
+                    memory_citations["events_checked"] += 1
+                else:
+                    memory_citations["bad"].append(
+                        {"file": md_file.name, "event": prefix, "matches": len(matches)}
                     )
     return {
         "items": len(rows),
@@ -1359,6 +1467,17 @@ def main() -> None:
     report_parser.add_argument("--subject")
     report_parser.add_argument("--supersedes", help="Prior report id prefix corrected by this report")
 
+    observation_parser = subparsers.add_parser("record-observation")
+    observation_parser.add_argument("--repo", type=Path, required=True)
+    observation_parser.add_argument("--connector", required=True)
+    observation_parser.add_argument("--account", required=True)
+    observation_parser.add_argument("--query-json", required=True)
+    observation_parser.add_argument("--result-json", required=True)
+
+    evidence_parser = subparsers.add_parser("evidence")
+    evidence_parser.add_argument("--repo", type=Path, required=True)
+    evidence_parser.add_argument("reference", help="sync:<id>, report:<id>, or event:<id>")
+
     args = parser.parse_args()
     if args.command == "init":
         initialize(
@@ -1392,6 +1511,17 @@ def main() -> None:
         print(json.dumps(record_report(
             args.repo, args.reporter_role, args.statement, args.subject, args.supersedes,
         ), indent=2))
+    elif args.command == "record-observation":
+        try:
+            query = json.loads(args.query_json)
+            result = json.loads(args.result_json)
+        except json.JSONDecodeError as error:
+            raise SystemExit(f"Query and result must be valid JSON: {error}") from error
+        print(json.dumps(record_connector_observation(
+            args.repo, args.connector, args.account, query, result,
+        ), indent=2))
+    elif args.command == "evidence":
+        print(json.dumps(cite_operational(args.repo, args.reference), indent=2))
 
 
 if __name__ == "__main__":

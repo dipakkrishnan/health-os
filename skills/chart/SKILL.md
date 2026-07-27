@@ -37,8 +37,9 @@ write to the health database.
    - `--kind patient_profile|lab_result|vital_sign|medication_order|medication_dispense|condition_assertion|allergy_assertion|encounter|care_plan|clinical_document|service_request|diagnostic_report|procedure` (repeatable)
    - `--query <text>` — substring on display name, or exact code (e.g. LOINC `2160-0`)
    - `--since` / `--until` — ISO date bounds
-8. Produce the view using `references/output_format.md`. Every factual line carries a
-   `[ci:<first 12 chars of item id>]` citation.
+8. Produce the view using `references/output_format.md`. Recorded clinical facts use
+   `[ci:<id>]`, patient/caregiver reports use `[report:<id>]`, sync/coverage claims
+   use `[sync:<id>]`, and runtime connector observations use `[event:<id>]`.
 9. When the user questions a fact, resolve the citation with
    `cite --repo <repo> <id-prefix>` — it returns the exact field pointers, values,
    and raw source bytes behind the item.
